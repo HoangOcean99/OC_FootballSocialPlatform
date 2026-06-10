@@ -782,7 +782,7 @@ export const USER_PROFILE = {
   predictionStats: { total: 98, correct: 67, accuracy: 68.4, streak: 5, bestStreak: 12, xpEarned: 3240 },
   favoriteTeams: ['Man United', 'Real Madrid', 'Barca B'],
   achievements: [
-    { id: 'a1', icon: '🌱', name: 'Rookie Fan', description: 'Tham gia FootballVerse', unlocked: true, rarity: 'common' },
+    { id: 'a1', icon: '🌱', name: 'Rookie Fan', description: 'Tham gia PitchGrid', unlocked: true, rarity: 'common' },
     { id: 'a2', icon: '🎯', name: 'First Prediction', description: 'Dự đoán đúng lần đầu', unlocked: true, rarity: 'common' },
     { id: 'a3', icon: '🔥', name: 'On Fire', description: 'Dự đoán đúng 5 lần liên tiếp', unlocked: true, rarity: 'rare' },
     { id: 'a4', icon: '👥', name: 'Social Butterfly', description: 'Tham gia 5 cộng đồng', unlocked: true, rarity: 'rare' },

@@ -1,6 +1,6 @@
 'use client';
 import { useState } from 'react';
-import Link from 'next/link';
+import { Link } from '@/navigation';
 import { useRouter } from '@/navigation';
 import { signInWithPopup } from 'firebase/auth';
 import { auth, googleProvider } from '@/lib/firebase';
@@ -28,7 +28,7 @@ export default function LoginPage() {
       const { data } = await api.post('/auth/login', { email, password });
       if (data.error) { setError(data.error); return; }
       setAuth(data.user, data.access_token);
-      router.push(data.requiresOnboarding ? '/onboarding' : '/');
+      router.push(data.requiresOnboarding ? '/onboarding' : '/home');
     } catch {
       setError('Đã có lỗi xảy ra, vui lòng thử lại.');
     } finally {
@@ -45,11 +45,11 @@ export default function LoginPage() {
       const { data } = await api.post('/auth/firebase', { idToken });
       if (data.error) { setError(data.error); return; }
       setAuth(data.user, data.access_token);
-      router.push(data.requiresOnboarding ? '/onboarding' : '/');
-    } catch (err: any) {
-      if (err.code !== 'auth/popup-closed-by-user') {
+      router.push(data.requiresOnboarding ? '/onboarding' : '/home');
+    } catch (err: unknown) {
+      if ((err as { code?: string }).code !== 'auth/popup-closed-by-user') {
         console.error('Google Login Error:', err);
-        setError('Đăng nhập Google thất bại: ' + (err.message || err.toString()));
+        setError('Đăng nhập Google thất bại: ' + ((err as Error).message || String(err)));
       }
     } finally {
       setGoogleLoading(false);
@@ -75,11 +75,10 @@ export default function LoginPage() {
         {/* Logo */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center gap-2 mb-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center shadow-lg shadow-emerald-500/30">
-              <span className="text-xl">⚽</span>
-            </div>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo.png" alt="Logo" className="h-10 w-auto object-contain rounded-xl" />
             <span className="text-2xl font-bold text-white tracking-tight">
-              Football<span className="text-emerald-400">Verse</span>
+              Pitch<span className="text-emerald-400">Grid</span>
             </span>
           </div>
           <p className="text-gray-400 text-sm">Ngôi nhà của mọi fan bóng đá</p>

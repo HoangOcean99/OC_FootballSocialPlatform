@@ -241,6 +241,7 @@ function UpcomingMatchRow({ match }: { match: (typeof UPCOMING_MATCHES)[0] }) {
 
 /** Community card in right sidebar */
 function CommunityCard({ community }: { community: (typeof TOP_COMMUNITIES)[0] }) {
+  const t = useTranslations('Home');
   const [joined, setJoined] = useState(community.isJoined);
 
   return (
@@ -255,7 +256,7 @@ function CommunityCard({ community }: { community: (typeof TOP_COMMUNITIES)[0] }
         <p className="text-sm font-medium text-gray-300 group-hover:text-white transition-colors truncate">
           {community.name}
         </p>
-        <p className="text-[11px] text-gray-600">{formatNumber(community.memberCount)} thành viên</p>
+        <p className="text-[11px] text-gray-600">{formatNumber(community.memberCount)} {t('members')}</p>
       </div>
 
       {/* Join button */}
@@ -267,7 +268,7 @@ function CommunityCard({ community }: { community: (typeof TOP_COMMUNITIES)[0] }
             : 'bg-emerald-500 text-white hover:bg-emerald-600'
           }`}
       >
-        {joined ? 'Đã tham gia' : '+ Tham gia'}
+        {joined ? t('btn_joined') : t('btn_join')}
       </button>
     </div>
   );
@@ -275,6 +276,7 @@ function CommunityCard({ community }: { community: (typeof TOP_COMMUNITIES)[0] }
 
 /** Predictor rank row */
 function PredictorRow({ predictor }: { predictor: (typeof TOP_PREDICTORS)[0] }) {
+  const t = useTranslations('Home');
   const rankColors: Record<number, string> = {
     1: 'text-yellow-400',
     2: 'text-gray-300',
@@ -325,7 +327,7 @@ function PredictorRow({ predictor }: { predictor: (typeof TOP_PREDICTORS)[0] }) 
       {/* Points */}
       <div className="text-right shrink-0">
         <p className="text-sm font-bold text-white">{formatNumber(predictor.points)}</p>
-        <p className="text-[10px] text-gray-600">điểm</p>
+        <p className="text-[10px] text-gray-600">{t('points')}</p>
       </div>
     </div>
   );

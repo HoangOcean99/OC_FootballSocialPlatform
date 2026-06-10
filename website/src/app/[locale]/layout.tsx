@@ -24,16 +24,16 @@ export const metadata: Metadata = {
   themeColor: '#080d14',
 };
 
-export default async function RootLayout({
+export default async function LocaleLayout({
   children,
   params: { locale }
-}: Readonly<{
+}: {
   children: React.ReactNode;
   params: { locale: string };
-}>) {
+}) {
   console.log('RootLayout received locale:', locale);
   // Validate that the incoming `locale` parameter is valid
-  if (!routing.locales.includes(locale as any)) {
+  if (!routing.locales.includes(locale as 'vi' | 'en' | 'ja')) {
     console.log('Locale not valid, calling notFound');
     notFound();
   }

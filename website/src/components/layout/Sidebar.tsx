@@ -1,7 +1,8 @@
 'use client';
 
-import Link from 'next/link';
+import { Link } from '@/navigation';
 import { COMPETITIONS, TOP_COMMUNITIES } from '@/lib/mockData';
+import { useTranslations } from 'next-intl';
 
 const JOINED_COMPETITIONS = COMPETITIONS.slice(0, 5);
 const JOINED_COMMUNITIES = TOP_COMMUNITIES.filter((c) => c.isJoined);
@@ -12,14 +13,13 @@ const ONLINE_FRIENDS = [
   { id: 'f3', name: 'Thanh Hà', initials: 'TH', color: 'bg-rose-600' },
   { id: 'f4', name: 'Quốc Anh', initials: 'QA', color: 'bg-amber-600' },
 ];
-import { useTranslations } from 'next-intl';
 
 export default function Sidebar() {
   const t = useTranslations('Sidebar');
   return (
-    <aside className="hidden lg:flex flex-col w-60 shrink-0 h-[calc(100vh-4rem)] sticky top-16 overflow-y-auto py-4 px-3 gap-4 border-r border-white/[0.05]">
+    <aside className="hidden lg:flex flex-col w-60 shrink-0 h-[calc(100vh-4rem)] sticky top-16 overflow-y-auto scrollbar-thin py-4 px-3 gap-4 border-r border-white/[0.05]">
 
-      {/* Giải đấu yêu thích */}
+      {/* Giáº£i Ä‘áº¥u yÃªu thÃ­ch */}
       <section>
         <h3 className="text-[11px] font-semibold text-gray-500 uppercase tracking-widest px-2 mb-2">
           {t('fav_competitions')}
@@ -53,7 +53,7 @@ export default function Sidebar() {
       {/* Divider */}
       <div className="border-t border-white/[0.05]" />
 
-      {/* Cộng đồng đã tham gia */}
+      {/* Cá»™ng Ä‘á»“ng Ä‘Ã£ tham gia */}
       <section>
         <h3 className="text-[11px] font-semibold text-gray-500 uppercase tracking-widest px-2 mb-2">
           {t('joined_communities')}
@@ -92,7 +92,7 @@ export default function Sidebar() {
       {/* Divider */}
       <div className="border-t border-white/[0.05]" />
 
-      {/* Bạn bè đang online */}
+      {/* Báº¡n bÃ¨ Ä‘ang online */}
       <section>
         <h3 className="text-[11px] font-semibold text-gray-500 uppercase tracking-widest px-2 mb-2">
           {t('online_friends')}

@@ -4,8 +4,8 @@ import { useEffect, useRef, useState } from 'react';
 import { useRouter, Link } from '@/navigation';
 import { useAuthStore } from '@/store/useAuthStore';
 import { motion, useScroll, useTransform, useSpring } from 'framer-motion';
-import { Play, Trophy, Users, MessageSquare, BookOpen, Star, Sparkles, Activity, ShieldCheck, Zap, ChevronRight, Check, Hexagon, Menu, X, Globe } from 'lucide-react';
-import { useTranslations } from 'next-intl';
+import { Trophy, Users, MessageSquare, BookOpen, Star, Sparkles, Activity, ChevronRight, Check, Menu, X, Globe } from 'lucide-react';
+import { useTranslations, useLocale } from 'next-intl';
 
 const IMAGES = [
   "https://images.unsplash.com/photo-1518605368461-1ee7c5320d29?q=80&w=800&auto=format&fit=crop",
@@ -23,6 +23,7 @@ export default function LandingPage() {
   const [isLangMenuOpen, setIsLangMenuOpen] = useState(false);
 
   const t = useTranslations('Landing');
+  const locale = useLocale();
 
   const FEATURES = [
     { icon: <Activity />, title: t('feat_1_title'), desc: t('feat_1_desc') },
@@ -81,15 +82,23 @@ export default function LandingPage() {
       </div>
 
       {/* ── NAVBAR ── */}
-      <header className="fixed top-0 left-0 right-0 z-50 border-b border-white/[0.04] bg-[#03060a]/50 backdrop-blur-2xl transition-all">
-        <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-          <Link href="/" className="flex items-center group">
-            <img src="/logo.png" alt="Logo" className="h-10 w-auto object-contain rounded-lg group-hover:scale-105 transition-transform" />
-            <span className="text-2xl font-black tracking-tight">Pitch<span className="text-emerald-400">Grid</span></span>
-          </Link>
+      <header className="fixed top-0 left-0 right-0 z-50 border-b border-white/[0.04] bg-[#03060a]/95 backdrop-blur-xl transition-all">
+        <div className="max-w-screen-2xl mx-auto px-4 h-16 flex items-center justify-between">
+          
+          {/* Left: Logo */}
+          <div className="flex-1 flex justify-start">
+            <Link href="/" className="flex items-center gap-2 group">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/logo.png" alt="Logo" className="h-8 w-auto object-contain rounded-md group-hover:scale-105 transition-transform" />
+              <span className="text-xl font-black tracking-tight">
+                <span className="text-white">Pitch</span>
+                <span className="text-emerald-400">Grid</span>
+              </span>
+            </Link>
+          </div>
 
-          {/* Desktop Navigation */}
-          <nav className="hidden lg:flex items-center gap-8 text-sm font-semibold text-gray-400">
+          {/* Center: Desktop Navigation */}
+          <nav className="hidden lg:flex items-center justify-center gap-8 text-sm font-semibold text-gray-400 shrink-0">
             <a href="#hero" className="hover:text-white transition-colors">{t('nav_about')}</a>
             <a href="#gallery" className="hover:text-white transition-colors">{t('nav_gallery')}</a>
             <a href="#features" className="hover:text-white transition-colors">{t('nav_features')}</a>
@@ -97,22 +106,22 @@ export default function LandingPage() {
             <a href="#faq" className="hover:text-white transition-colors">{t('nav_faq')}</a>
           </nav>
 
-          <div className="hidden lg:flex items-center gap-4">
-            {/* Language Switcher */}
-            <div className="relative">
-              <button
-                onClick={() => setIsLangMenuOpen(!isLangMenuOpen)}
-                className="flex items-center gap-2 px-3 py-2 text-gray-300 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
-              >
-                <Globe className="w-5 h-5" />
+          {/* Right: Actions */}
+          <div className="flex-1 flex items-center justify-end gap-4">
+            {/* Language Switcher Desktop */}
+            <div className="hidden sm:block relative group">
+              <button className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-gray-300 hover:text-white hover:bg-white/[0.06] transition-all font-medium text-sm">
+                <Globe className="w-4 h-4 mr-1" />
+                <span className="uppercase">{locale}</span>
+                <svg className="w-4 h-4 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
               </button>
-              {isLangMenuOpen && (
-                <div className="absolute right-0 mt-2 w-32 bg-[#080d14] border border-white/10 rounded-xl shadow-xl overflow-hidden py-2">
-                  <button onClick={() => changeLanguage('vi')} className="w-full text-left px-4 py-2 hover:bg-white/5 text-sm">🇻🇳 Tiếng Việt</button>
-                  <button onClick={() => changeLanguage('en')} className="w-full text-left px-4 py-2 hover:bg-white/5 text-sm">🇬🇧 English</button>
-                  <button onClick={() => changeLanguage('ja')} className="w-full text-left px-4 py-2 hover:bg-white/5 text-sm">🇯🇵 日本語</button>
-                </div>
-              )}
+              <div className="absolute top-full mt-1 right-0 bg-[#0f1923] border border-white/10 rounded-xl p-1 min-w-[100px] opacity-0 group-hover:opacity-100 transition-all pointer-events-none group-hover:pointer-events-auto z-50 shadow-xl before:absolute before:-top-2 before:left-0 before:right-0 before:h-2">
+                {(['vi', 'en', 'ja'] as const).map((l) => (
+                  <button key={l} onClick={() => changeLanguage(l)} className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors ${locale === l ? 'bg-emerald-500/20 text-emerald-400' : 'text-gray-300 hover:bg-white/5 hover:text-white'}`}>
+                    {l.toUpperCase()}
+                  </button>
+                ))}
+              </div>
             </div>
 
             <Link href="/login" className="text-sm font-semibold text-gray-300 hover:text-white px-4 py-2">{t('nav_login')}</Link>
@@ -145,11 +154,23 @@ export default function LandingPage() {
               <a href="#faq" onClick={() => setIsMobileMenuOpen(false)} className="hover:text-emerald-400">{t('nav_faq')}</a>
             </nav>
             <div className="flex flex-col gap-4">
-              {/* Mobile Language Switch */}
-              <div className="flex justify-between items-center py-3 border-b border-white/10 mb-4">
-                <button onClick={() => changeLanguage('vi')} className="px-3 py-1 hover:text-emerald-400">🇻🇳 VN</button>
-                <button onClick={() => changeLanguage('en')} className="px-3 py-1 hover:text-emerald-400">🇬🇧 EN</button>
-                <button onClick={() => changeLanguage('ja')} className="px-3 py-1 hover:text-emerald-400">🇯🇵 JP</button>
+              {/* Mobile Language Switcher */}
+              <div className="flex flex-col gap-2 mb-4">
+                <p className="text-xs font-bold text-gray-500 uppercase tracking-wider px-2 mb-1">Ngôn ngữ</p>
+                <div className="grid grid-cols-3 gap-2">
+                  {(['vi', 'en', 'ja'] as const).map((l) => (
+                    <button
+                      key={l}
+                      onClick={() => changeLanguage(l)}
+                      className={`
+                        py-2 rounded-xl text-sm font-bold uppercase transition-all
+                        ${locale === l ? 'bg-emerald-500 text-white shadow-lg' : 'bg-white/[0.05] text-gray-400 hover:bg-white/10'}
+                      `}
+                    >
+                      {l}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               <Link href="/login" className="w-full py-3 text-center rounded-xl bg-white/5 border border-white/10 text-white font-bold hover:bg-white/10">
@@ -209,6 +230,7 @@ export default function LandingPage() {
             {/* Main Center Image */}
             <motion.div style={{ y: yHero1 }} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 w-[300px] h-[400px] rounded-[2rem] overflow-hidden border border-white/10 shadow-2xl shadow-emerald-500/20 rotate-[-5deg]">
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent z-10" />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={IMAGES[0]} alt="Fan" className="w-full h-full object-cover" />
               <div className="absolute bottom-6 left-6 right-6 z-20">
                 <div className="bg-white/10 backdrop-blur-md rounded-xl p-4 border border-white/20">
@@ -220,11 +242,13 @@ export default function LandingPage() {
 
             {/* Back Right Image */}
             <motion.div style={{ y: yHero2 }} className="absolute top-10 right-0 z-10 w-[250px] h-[320px] rounded-[2rem] overflow-hidden border border-white/5 opacity-80 rotate-[10deg] blur-[1px]">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={IMAGES[1]} alt="Fan 2" className="w-full h-full object-cover mix-blend-luminosity" />
             </motion.div>
 
             {/* Front Left Image */}
             <motion.div style={{ y: yHero3 }} className="absolute bottom-10 left-0 z-30 w-[240px] h-[240px] rounded-[2rem] overflow-hidden border border-emerald-500/30 shadow-2xl rotate-[8deg]">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={IMAGES[2]} alt="Fan 3" className="w-full h-full object-cover" />
               <div className="absolute inset-0 bg-gradient-to-tr from-emerald-500/40 to-transparent mix-blend-overlay" />
             </motion.div>
@@ -249,6 +273,7 @@ export default function LandingPage() {
             <motion.div style={{ x: xHorizontalRow1 }} className="flex gap-6 w-fit px-6">
               {[...IMAGES, ...IMAGES].map((img, idx) => (
                 <div key={`r1-${idx}`} className="w-[70vw] md:w-[45vw] lg:w-[35vw] h-[250px] shrink-0 rounded-[2rem] overflow-hidden relative group shadow-2xl">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={img}
                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 grayscale group-hover:grayscale-0"
@@ -264,6 +289,7 @@ export default function LandingPage() {
             <motion.div style={{ x: xHorizontalRow2 }} className="flex gap-6 w-fit px-6">
               {[...IMAGES.reverse(), ...IMAGES.reverse()].map((img, idx) => (
                 <div key={`r2-${idx}`} className="w-[70vw] md:w-[45vw] lg:w-[35vw] h-[250px] shrink-0 rounded-[2rem] overflow-hidden relative group shadow-2xl">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={img}
                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 grayscale group-hover:grayscale-0"
@@ -310,6 +336,7 @@ export default function LandingPage() {
       {/* ── 4. PREMIUM SECTION ── */}
       <section id="premium" className="relative z-10 py-32 px-6">
         <div className="absolute inset-0 z-0">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="https://images.unsplash.com/photo-1551280857-2b9bbe5260fc?q=80&w=1600&auto=format&fit=crop" className="w-full h-full object-cover opacity-10 mix-blend-luminosity" alt="premium bg" />
           <div className="absolute inset-0 bg-gradient-to-b from-[#03060a] via-[#03060a]/80 to-[#03060a]" />
         </div>
@@ -387,6 +414,7 @@ export default function LandingPage() {
         <div className="sticky top-0 h-screen flex items-center justify-center overflow-hidden">
           {/* Background khổng lồ */}
           <div className="absolute inset-0">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={IMAGES[5]} className="w-full h-full object-cover opacity-30" alt="stadium bg" />
             <div className="absolute inset-0 bg-gradient-to-t from-[#03060a] via-[#03060a]/60 to-[#03060a]" />
           </div>
@@ -418,6 +446,7 @@ export default function LandingPage() {
       <footer className="relative z-20 border-t border-white/[0.05] bg-[#03060a] py-12">
         <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-6 text-gray-500 font-medium">
           <div className="flex items-center text-white">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/logo.png" alt="Logo" className="h-8 w-auto object-contain rounded-md" />
             <span className="font-bold text-xl tracking-tight">Pitch<span className="text-emerald-400">Grid</span></span>
           </div>

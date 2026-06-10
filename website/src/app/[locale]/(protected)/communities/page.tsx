@@ -3,17 +3,14 @@
 import { useState } from 'react';
 import { COMMUNITY_CARDS, type CommunityCard as CommunityCardData, formatNumber } from '@/lib/mockData';
 
+import { useTranslations } from 'next-intl';
+
 type Tab = 'joined' | 'team' | 'competition' | 'fanmade' | 'all';
 
-const TABS: { id: Tab; label: string }[] = [
-  { id: 'joined', label: 'Đang tham gia' },
-  { id: 'team', label: 'Đội bóng' },
-  { id: 'competition', label: 'Giải đấu' },
-  { id: 'fanmade', label: 'Fan-made' },
-  { id: 'all', label: 'Tất cả' },
-];
+const TABS_KEYS: Tab[] = ['joined', 'team', 'competition', 'fanmade', 'all'];
 
 export default function CommunitiesPage() {
+  const t = useTranslations('Communities');
   const [activeTab, setActiveTab] = useState<Tab>('all');
   const [search, setSearch] = useState('');
   const [communities, setCommunities] = useState<CommunityCardData[]>(COMMUNITY_CARDS);
@@ -29,6 +26,8 @@ export default function CommunitiesPage() {
       activeTab === c.category;
     return matchSearch && matchTab;
   });
+
+
 
   const toggleJoin = (id: string) => {
     setCommunities((prev) =>
@@ -50,14 +49,14 @@ export default function CommunitiesPage() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
           <div>
             <h1 className="text-3xl font-bold text-white flex items-center gap-3">
-              👥 <span>Cộng đồng Fan</span>
+              👥 <span>{t('title').replace('👥 ', '')}</span>
             </h1>
             <p className="text-gray-400 mt-1 text-sm">
-              Tìm và tham gia cộng đồng fan bóng đá yêu thích của bạn
+              {t('subtitle')}
             </p>
           </div>
           <button className="flex items-center gap-2 px-5 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-white font-semibold rounded-xl transition-all duration-200 shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40 text-sm whitespace-nowrap">
-            <span className="text-base">+</span> Tạo cộng đồng
+            <span className="text-base"></span> {t('create_btn')}
           </button>
         </div>
 
@@ -66,7 +65,7 @@ export default function CommunitiesPage() {
           <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-lg">🔍</span>
           <input
             type="text"
-            placeholder="Tìm kiếm cộng đồng, hashtag..."
+            placeholder={t('search_placeholder')}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full pl-11 pr-4 py-3 bg-white/[0.05] border border-white/[0.08] rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500/50 focus:bg-white/[0.07] transition-all text-sm"
@@ -83,18 +82,18 @@ export default function CommunitiesPage() {
 
         {/* ── Tabs ── */}
         <div className="flex gap-1 mb-8 bg-white/[0.03] rounded-xl p-1 border border-white/[0.06] w-fit">
-          {TABS.map((tab) => (
+          {TABS_KEYS.map((tab) => (
             <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
+              key={tab}
+              onClick={() => setActiveTab(tab)}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 whitespace-nowrap ${
-                activeTab === tab.id
+                activeTab === tab
                   ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/30'
                   : 'text-gray-400 hover:text-white hover:bg-white/[0.05]'
               }`}
             >
-              {tab.label}
-              {tab.id === 'joined' && (
+              {t(('tab_' + tab) as Parameters<typeof t>[0])}
+              {tab === 'joined' && (
                 <span className="ml-1.5 text-xs bg-white/20 rounded-full px-1.5 py-0.5">
                   {communities.filter((c) => c.joined).length}
                 </span>
@@ -105,15 +104,14 @@ export default function CommunitiesPage() {
 
         {/* ── Count ── */}
         <p className="text-gray-500 text-xs mb-5">
-          Hiển thị{' '}
-          <span className="text-emerald-400 font-semibold">{filtered.length}</span> cộng đồng
+          <span className="text-emerald-400 font-semibold">{filtered.length}</span> {t('members')}
         </p>
 
         {/* ── Grid ── */}
         {filtered.length === 0 ? (
           <div className="text-center py-24 text-gray-500">
             <div className="text-5xl mb-4">🔍</div>
-            <p>Không tìm thấy cộng đồng nào</p>
+            <p>{t('search_placeholder').replace('...', '')} không tìm thấy</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
@@ -141,6 +139,7 @@ function CommunityCard({
   community: CommunityCardData;
   onToggleJoin: (id: string) => void;
 }) {
+  const t = useTranslations('Communities');
   const rarityBadge =
     community.category === 'competition'
       ? 'bg-amber-500/20 text-amber-300 border-amber-500/30'
@@ -150,10 +149,10 @@ function CommunityCard({
 
   const categoryLabel =
     community.category === 'competition'
-      ? 'Giải đấu'
+      ? t('tab_competitions')
       : community.category === 'fanmade'
-      ? 'Fan-made'
-      : 'Đội bóng';
+      ? t('tab_fanmade')
+      : t('tab_teams');
 
   return (
     <div className="group relative flex flex-col bg-white/[0.04] border border-white/[0.08] rounded-2xl overflow-hidden hover:border-emerald-500/40 hover:scale-[1.02] hover:shadow-xl hover:shadow-emerald-500/10 transition-all duration-300 cursor-pointer">
@@ -178,7 +177,7 @@ function CommunityCard({
         {/* Joined indicator */}
         {community.joined && (
           <span className="absolute top-2.5 left-2.5 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 backdrop-blur-sm">
-            ✓ Đã tham gia
+            ✓ {t('joined_btn')}
           </span>
         )}
 
@@ -203,13 +202,13 @@ function CommunityCard({
           <span className="flex items-center gap-1">
             <span>👥</span>
             <span className="text-gray-300 font-medium">{formatNumber(community.members)}</span>
-            <span>thành viên</span>
+            <span>{t('members')}</span>
           </span>
           <span className="w-px h-3 bg-white/10" />
           <span className="flex items-center gap-1">
             <span>📝</span>
             <span className="text-gray-300 font-medium">{community.postsPerDay}</span>
-            <span>bài/ngày</span>
+            <span>{t('posts_per_day')}</span>
           </span>
         </div>
 
@@ -237,7 +236,7 @@ function CommunityCard({
               : 'bg-emerald-500 text-white hover:bg-emerald-400 shadow-md shadow-emerald-500/20'
           }`}
         >
-          {community.joined ? '✓ Đã tham gia' : '+ Tham gia'}
+          {community.joined ? `✓ ${t('joined_btn')}` : `+ ${t('join_btn')}`}
         </button>
       </div>
     </div>

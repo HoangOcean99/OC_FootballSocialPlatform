@@ -1,11 +1,12 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
+import { Link } from '@/navigation';
 import { usePathname, useRouter } from '@/navigation';
 import { LIVE_MATCHES } from '@/lib/mockData';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useTranslations, useLocale } from 'next-intl';
+import { Globe } from 'lucide-react';
 
 export default function Navbar() {
   const t = useTranslations('Navbar');
@@ -41,21 +42,19 @@ export default function Navbar() {
     <>
       <nav className="sticky top-0 z-50 bg-[#080d14]/95 backdrop-blur-xl border-b border-white/[0.06]">
         <div className="max-w-screen-2xl mx-auto px-4 h-16 flex items-center gap-4 lg:gap-6">
-
+          
           {/* Logo */}
           <Link href="/home" className="flex items-center gap-2 shrink-0 group">
-            <div className="relative">
-              <span className="text-xl lg:text-2xl drop-shadow-[0_0_8px_rgba(16,185,129,0.8)]">⚽</span>
-              <span className="absolute -top-1 -right-1 w-2 h-2 bg-emerald-400 rounded-full animate-ping opacity-75" />
-            </div>
-            <span className="text-lg lg:text-xl font-black tracking-tight">
-              <span className="text-white">Football</span>
-              <span className="text-emerald-400">Verse</span>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo.png" alt="Logo" className="h-8 w-auto object-contain rounded-md group-hover:scale-105 transition-transform" />
+            <span className="text-xl font-black tracking-tight">
+              <span className="text-white">Pitch</span>
+              <span className="text-emerald-400">Grid</span>
             </span>
           </Link>
 
           {/* Nav Links — Desktop */}
-          <div className="hidden lg:flex items-center gap-1 flex-1">
+          <div className="hidden lg:flex items-center gap-1 flex-1 ms-5">
             {NAV_LINKS.map(({ href, label, icon }) => {
               const isActive = pathname === href;
               return (
@@ -106,6 +105,7 @@ export default function Navbar() {
             {/* Language Switcher Desktop */}
             <div className="hidden sm:block relative group">
               <button className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-gray-300 hover:text-white hover:bg-white/[0.06] transition-all font-medium text-sm">
+                <Globe className="w-4 h-4 mr-0.5" />
                 <span className="uppercase">{locale}</span>
                 <svg className="w-4 h-4 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
               </button>
@@ -143,18 +143,24 @@ export default function Navbar() {
             <div className="hidden lg:flex items-center gap-2">
               {user ? (
                 <div className="relative group cursor-pointer">
-                  <div
-                    onClick={handleLogout}
-                    title={t('logout')}
-                    className="w-9 h-9 rounded-xl bg-emerald-600 flex items-center justify-center text-sm font-bold text-white ring-2 ring-emerald-400/30 group-hover:ring-red-400/60 transition-all duration-200"
+                  <Link
+                    href="/profile"
+                    className="w-9 h-9 rounded-xl bg-emerald-600 flex items-center justify-center text-sm font-bold text-white ring-2 ring-emerald-400/30 group-hover:ring-emerald-400/60 transition-all duration-200 overflow-hidden"
                   >
-                    {initials}
-                  </div>
+                    {user.avatarUrl ? (
+                      <img src={user.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+                    ) : (
+                      initials
+                    )}
+                  </Link>
                   <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-400 rounded-full border-2 border-[#080d14]" />
                   <div className="absolute top-full mt-2 right-0 bg-[#0f1923] border border-white/10 rounded-xl p-2 min-w-[160px] opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none group-hover:pointer-events-auto z-50 shadow-xl before:absolute before:-top-3 before:left-0 before:right-0 before:h-3">
                     <p className="text-white text-sm font-medium px-2 py-1">@{user.username}</p>
                     <p className="text-gray-500 text-xs px-2 pb-1">{user.level}</p>
                     <hr className="border-white/10 my-1" />
+                    <Link href="/profile" className="block w-full text-left px-2 py-1.5 text-gray-300 hover:bg-white/10 hover:text-white rounded-lg text-sm transition-colors mb-1">
+                      👤 Hồ sơ
+                    </Link>
                     <button onClick={handleLogout} className="w-full text-left px-2 py-1.5 text-red-400 hover:bg-red-500/10 rounded-lg text-sm transition-colors">
                       🚪 {t('logout')}
                     </button>
@@ -194,8 +200,12 @@ export default function Navbar() {
             {/* Mobile User Profile */}
             {user ? (
               <div className="flex items-center gap-3 bg-white/[0.03] p-4 rounded-2xl border border-white/[0.05]">
-                <div className="w-12 h-12 rounded-xl bg-emerald-600 flex items-center justify-center text-lg font-bold text-white shrink-0">
-                  {initials}
+                <div className="w-12 h-12 rounded-xl bg-emerald-600 flex items-center justify-center text-lg font-bold text-white shrink-0 overflow-hidden">
+                  {user.avatarUrl ? (
+                    <img src={user.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+                  ) : (
+                    initials
+                  )}
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-white font-bold truncate">@{user.username}</p>

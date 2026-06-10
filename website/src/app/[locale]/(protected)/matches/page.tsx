@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
+import { Link } from '@/navigation';
+import { useTranslations } from 'next-intl';
 
 // ─── Mock Data ────────────────────────────────────────────────────────────────
 type MatchStatus = 'live' | 'upcoming' | 'finished';
@@ -52,13 +53,8 @@ const TOP_SCORERS = [
   { name: 'Robert Lewandowski', club: 'Barcelona', goals: 19, emoji: '🇵🇱' },
 ];
 
-const COMPETITIONS_LIST = ['Tất cả', 'Premier League', 'Champions League', 'La Liga', 'Bundesliga', 'Serie A', 'V.League'];
-const STATUS_TABS = [
-  { key: 'all', label: 'Tất cả' },
-  { key: 'live', label: 'Trực tiếp' },
-  { key: 'upcoming', label: 'Sắp diễn ra' },
-  { key: 'finished', label: 'Kết quả' },
-];
+const COMPETITIONS_LIST = ['all', 'Premier League', 'Champions League', 'La Liga', 'Bundesliga', 'Serie A', 'V.League'];
+const STATUS_TABS = ['all', 'live', 'upcoming', 'finished'];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function formatDate(d: Date) {
@@ -86,7 +82,7 @@ function StatusBadge({ match }: { match: Match }) {
   if (match.status === 'finished') {
     return (
       <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-gray-700/50 border border-white/10 text-gray-400 text-xs font-medium">
-        KT
+        {match.status === 'finished' ? 'FT' : ''}
       </span>
     );
   }
@@ -164,7 +160,7 @@ function CompetitionGroup({ name, matches }: { name: string; matches: Match[] })
           <p className="text-xs text-gray-500">{first.country}</p>
         </div>
         <div className="ml-auto flex items-center gap-2">
-          <span className="text-xs text-gray-500">{matches.length} trận</span>
+          <span className="text-xs text-gray-500">{matches.length}</span>
         </div>
       </div>
       {/* Match rows */}
@@ -177,9 +173,10 @@ function CompetitionGroup({ name, matches }: { name: string; matches: Match[] })
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function MatchesPage() {
+  const t = useTranslations('Matches');
   const [dateOffset, setDateOffset] = useState(0);
   const [statusFilter, setStatusFilter] = useState('all');
-  const [competitionFilter, setCompetitionFilter] = useState('Tất cả');
+  const [competitionFilter, setCompetitionFilter] = useState('all');
 
   const currentDate = new Date();
   currentDate.setDate(currentDate.getDate() + dateOffset);
@@ -187,7 +184,7 @@ export default function MatchesPage() {
   // Filter matches
   const filtered = MATCHES.filter(m => {
     const statusOk = statusFilter === 'all' || m.status === statusFilter;
-    const compOk = competitionFilter === 'Tất cả' || m.competition === competitionFilter;
+    const compOk = competitionFilter === 'all' || m.competition === competitionFilter;
     return statusOk && compOk;
   });
 
@@ -205,9 +202,9 @@ export default function MatchesPage() {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
           <div>
             <h1 className="text-3xl font-black text-white tracking-tight">
-              🗓️ Trung tâm Trận đấu
+              {t('title')}
             </h1>
-            <p className="text-gray-500 text-sm mt-1">Cập nhật trực tiếp · Mọi giải đấu</p>
+            <p className="text-gray-500 text-sm mt-1">{t('subtitle')}</p>
           </div>
 
           {/* Date Navigation */}
@@ -223,7 +220,7 @@ export default function MatchesPage() {
                 {formatDate(currentDate)}
               </p>
               {dateOffset === 0 && (
-                <span className="text-emerald-400 text-xs font-medium">Hôm nay</span>
+                <span className="text-emerald-400 text-xs font-medium">{t('today')}</span>
               )}
             </div>
             <button
@@ -237,7 +234,7 @@ export default function MatchesPage() {
                 onClick={() => setDateOffset(0)}
                 className="ml-2 px-3 py-1 rounded-lg bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 text-xs font-semibold hover:bg-emerald-500/30 transition-all"
               >
-                Hôm nay
+                {t('today')}
               </button>
             )}
           </div>
@@ -251,18 +248,18 @@ export default function MatchesPage() {
             <div className="flex items-center gap-2 mb-4 flex-wrap">
               {STATUS_TABS.map(tab => (
                 <button
-                  key={tab.key}
-                  onClick={() => setStatusFilter(tab.key)}
+                  key={tab}
+                  onClick={() => setStatusFilter(tab)}
                   className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200
-                    ${statusFilter === tab.key
+                    ${statusFilter === tab
                       ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/25'
                       : 'bg-white/[0.04] border border-white/[0.08] text-gray-400 hover:text-white hover:bg-white/[0.08]'}`}
                 >
-                  {tab.key === 'live' && (
+                  {tab === 'live' && (
                     <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
                   )}
-                  {tab.label}
-                  {tab.key === 'live' && (
+                  {t(`tab_${tab}`)}
+                  {tab === 'live' && (
                     <span className="ml-1 px-1.5 py-0.5 rounded-md bg-red-500/30 text-red-300 text-xs font-bold">
                       {liveCount}
                     </span>
@@ -282,7 +279,7 @@ export default function MatchesPage() {
                       ? 'bg-emerald-500/20 border-emerald-500/60 text-emerald-300'
                       : 'bg-white/[0.03] border-white/[0.08] text-gray-500 hover:text-gray-300 hover:border-white/[0.18]'}`}
                 >
-                  {comp}
+                  {comp === 'all' ? t('tab_all') : comp}
                 </button>
               ))}
             </div>
@@ -291,8 +288,8 @@ export default function MatchesPage() {
             {Object.keys(grouped).length === 0 ? (
               <div className="bg-white/[0.04] border border-white/[0.08] rounded-2xl p-12 text-center backdrop-blur-xl">
                 <p className="text-4xl mb-3">⚽</p>
-                <p className="text-gray-400 font-semibold">Không có trận đấu nào</p>
-                <p className="text-gray-600 text-sm mt-1">Thử thay đổi bộ lọc</p>
+                <p className="text-gray-400 font-semibold">{t('no_matches')}</p>
+                <p className="text-gray-600 text-sm mt-1">{t('try_filter')}</p>
               </div>
             ) : (
               Object.entries(grouped).map(([comp, matches]) => (
@@ -307,25 +304,25 @@ export default function MatchesPage() {
             {/* Stats Card */}
             <div className="bg-white/[0.04] border border-white/[0.08] rounded-2xl p-5 backdrop-blur-xl">
               <h3 className="text-white font-bold text-sm mb-4 flex items-center gap-2">
-                <span className="text-lg">📊</span> Thống kê hôm nay
+                <span className="text-lg">📊</span> {t('stats_today')}
               </h3>
               <div className="grid grid-cols-3 gap-3">
                 <div className="bg-white/[0.04] rounded-xl p-3 text-center">
                   <p className="text-2xl font-black text-white">{MATCHES.length}</p>
-                  <p className="text-gray-500 text-xs mt-1">Tổng trận</p>
+                  <p className="text-gray-500 text-xs mt-1">{t('total_matches')}</p>
                 </div>
                 <div className="bg-red-500/[0.08] border border-red-500/20 rounded-xl p-3 text-center">
                   <p className="text-2xl font-black text-red-400">{liveCount}</p>
-                  <p className="text-gray-500 text-xs mt-1">Trực tiếp</p>
+                  <p className="text-gray-500 text-xs mt-1">{t('live_matches')}</p>
                 </div>
                 <div className="bg-emerald-500/[0.08] border border-emerald-500/20 rounded-xl p-3 text-center">
                   <p className="text-2xl font-black text-emerald-400">{upcomingCount}</p>
-                  <p className="text-gray-500 text-xs mt-1">Sắp đấu</p>
+                  <p className="text-gray-500 text-xs mt-1">{t('upcoming_matches')}</p>
                 </div>
               </div>
               <div className="mt-3 bg-white/[0.04] rounded-xl p-3 flex items-center justify-between">
-                <span className="text-gray-400 text-xs">Đã kết thúc</span>
-                <span className="text-white font-bold text-sm">{finishedCount} trận</span>
+                <span className="text-gray-400 text-xs">{t('finished_matches')}</span>
+                <span className="text-white font-bold text-sm">{t('matches_count', { count: finishedCount })}</span>
               </div>
             </div>
 
@@ -334,7 +331,7 @@ export default function MatchesPage() {
               <div className="bg-white/[0.04] border border-red-500/20 rounded-2xl p-5 backdrop-blur-xl">
                 <h3 className="text-white font-bold text-sm mb-4 flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-                  Đang diễn ra
+                  {t('live_now')}
                 </h3>
                 <div className="space-y-3">
                   {MATCHES.filter(m => m.status === 'live').map(m => (
@@ -359,7 +356,7 @@ export default function MatchesPage() {
             {/* Top Scorers */}
             <div className="bg-white/[0.04] border border-white/[0.08] rounded-2xl p-5 backdrop-blur-xl">
               <h3 className="text-white font-bold text-sm mb-4 flex items-center gap-2">
-                <span className="text-lg">👟</span> Vua phá lưới
+                <span className="text-lg">👟</span> {t('top_scorers')}
               </h3>
               <div className="space-y-3">
                 {TOP_SCORERS.map((scorer, i) => (

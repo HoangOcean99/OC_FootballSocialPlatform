@@ -37,7 +37,7 @@ type Step = 'username' | 'teams';
 
 export default function OnboardingPage() {
   const router = useRouter();
-  const { user, setAuth, token } = useAuthStore();
+  const { user, setAuth } = useAuthStore();
 
   const [step, setStep] = useState<Step>('username');
   const [username, setUsername] = useState(user?.username || '');
@@ -48,7 +48,7 @@ export default function OnboardingPage() {
 
   useEffect(() => {
     if (!user) router.push('/login');
-    if (user?.onboardingCompleted) router.push('/');
+    if (user?.onboardingCompleted) router.push('/home');
   }, [user, router]);
 
   const toggle = (arr: string[], val: string) =>
@@ -70,7 +70,7 @@ export default function OnboardingPage() {
       });
       if (data.error) { setError(data.error); return; }
       setAuth(data.user, data.access_token);
-      router.push('/');
+      router.push('/home');
     } catch {
       setError('Đã có lỗi, vui lòng thử lại');
     } finally {
@@ -90,11 +90,10 @@ export default function OnboardingPage() {
         {/* Logo */}
         <div className="text-center mb-10">
           <div className="inline-flex items-center gap-2 mb-4">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center shadow-lg shadow-emerald-500/30">
-              <span className="text-xl">⚽</span>
-            </div>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo.png" alt="Logo" className="h-10 w-auto object-contain rounded-xl" />
             <span className="text-2xl font-bold tracking-tight">
-              Football<span className="text-emerald-400">Verse</span>
+              Pitch<span className="text-emerald-400">Grid</span>
             </span>
           </div>
 
@@ -117,7 +116,7 @@ export default function OnboardingPage() {
           </h1>
           <p className="text-gray-400">
             {step === 'username'
-              ? 'Username là tên hiển thị của bạn trong cộng đồng FootballVerse'
+              ? 'Username là tên hiển thị của bạn trong cộng đồng PitchGrid'
               : 'Chọn ít nhất 1 đội bóng - có thể là đội tuyển, câu lạc bộ, hoặc cả hai!'}
           </p>
         </div>
@@ -237,7 +236,7 @@ export default function OnboardingPage() {
                     <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
                     Đang lưu...
                   </span>
-                ) : '🎉 Vào FootballVerse!'}
+                ) : '🎉 Vào PitchGrid!'}
               </button>
             </div>
           </div>

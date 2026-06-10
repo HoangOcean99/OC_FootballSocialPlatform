@@ -25,13 +25,27 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
     return (
       <div className="min-h-screen bg-[#080d14] flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center animate-pulse shadow-lg shadow-emerald-500/30">
-            <span className="text-2xl">⚽</span>
+          <div className="w-32 h-32 flex items-center justify-center animate-pulse drop-shadow-[0_0_12px_rgba(16,185,129,0.4)]">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo.png" alt="Logo" className="w-full h-full object-contain" />
           </div>
-          <div className="flex gap-1">
-            <div className="w-2 h-2 bg-emerald-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-            <div className="w-2 h-2 bg-emerald-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-            <div className="w-2 h-2 bg-emerald-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+          {/* Wave Bouncing Text */}
+          <style>{`
+            @keyframes softWave {
+              0%, 100% { transform: translateY(0); }
+              50% { transform: translateY(-8px); }
+            }
+            .animate-wave {
+              animation: softWave 1.2s ease-in-out infinite;
+            }
+          `}</style>
+          <div className="mt-2 flex items-center justify-center">
+            {['P', 'i', 't', 'c', 'h'].map((char, i) => (
+              <span key={i} className="inline-block text-2xl font-black tracking-tight text-white animate-wave" style={{ animationDelay: `${i * 100}ms` }}>{char}</span>
+            ))}
+            {['G', 'r', 'i', 'd'].map((char, i) => (
+              <span key={i + 5} className="inline-block text-2xl font-black tracking-tight text-emerald-400 animate-wave" style={{ animationDelay: `${(i + 5) * 100}ms` }}>{char}</span>
+            ))}
           </div>
         </div>
       </div>

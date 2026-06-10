@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 import { USER_PROFILE, Achievement, UserActivity } from '@/lib/mockData';
+import { useTranslations } from 'next-intl';
+import { useAuthStore } from '@/store/useAuthStore';
 
 const u = USER_PROFILE;
 const xpPercent = Math.round((u.xp / u.xpToNextLevel) * 100);
@@ -30,7 +32,13 @@ const activityColor: Record<UserActivity['type'], string> = {
 };
 
 export default function ProfilePage() {
+  const t = useTranslations('Profile');
   const [journalOpen, setJournalOpen] = useState<string | null>(null);
+  const { user } = useAuthStore();
+  
+  const displayInitials = user?.username ? user.username.slice(0, 2).toUpperCase() : u.initials;
+  const displayName = user?.username || u.displayName;
+  const displayUsername = user?.username || u.username;
 
   return (
     <div className="min-h-screen bg-[#080d14] text-white">
@@ -60,10 +68,10 @@ export default function ProfilePage() {
           {/* Action buttons */}
           <div className="absolute top-4 right-4 flex gap-2">
             <button className="px-3 py-1.5 bg-white/[0.08] border border-white/[0.12] rounded-lg text-xs text-gray-300 hover:bg-white/[0.12] transition">
-              ✏️ Chỉnh sửa
+              ✏️ {t('btn_edit')}
             </button>
             <button className="px-3 py-1.5 bg-white/[0.08] border border-white/[0.12] rounded-lg text-xs text-gray-300 hover:bg-white/[0.12] transition">
-              ⚙️ Cài đặt
+              ⚙️ {t('btn_settings')}
             </button>
           </div>
         </div>
@@ -75,8 +83,12 @@ export default function ProfilePage() {
           <div className="flex flex-col sm:flex-row sm:items-end gap-5 -mt-16 mb-6">
             {/* Avatar */}
             <div className="relative">
-              <div className="w-28 h-28 rounded-2xl bg-gradient-to-br from-emerald-400 to-green-600 ring-4 ring-emerald-500/50 ring-offset-4 ring-offset-[#080d14] flex items-center justify-center shadow-2xl shadow-emerald-500/30">
-                <span className="text-4xl font-black text-white">{u.initials}</span>
+              <div className="w-28 h-28 rounded-2xl bg-gradient-to-br from-emerald-400 to-green-600 ring-4 ring-emerald-500/50 ring-offset-4 ring-offset-[#080d14] flex items-center justify-center shadow-2xl shadow-emerald-500/30 overflow-hidden">
+                {user?.avatarUrl ? (
+                  <img src={user.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+                ) : (
+                  <span className="text-4xl font-black text-white">{displayInitials}</span>
+                )}
               </div>
               {/* Online dot */}
               <span className="absolute bottom-1.5 right-1.5 w-4 h-4 bg-emerald-400 border-2 border-[#080d14] rounded-full" />
@@ -85,7 +97,7 @@ export default function ProfilePage() {
             {/* Name & badge */}
             <div className="flex-1 pb-1">
               <div className="flex flex-wrap items-center gap-2 mb-1">
-                <h1 className="text-2xl font-black text-white">{u.displayName}</h1>
+                <h1 className="text-2xl font-black text-white">{displayName}</h1>
                 <span className="text-xs px-2.5 py-0.5 bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 rounded-full font-semibold">
                   Lv.{u.level}
                 </span>
@@ -93,7 +105,7 @@ export default function ProfilePage() {
                   {u.levelName}
                 </span>
               </div>
-              <p className="text-gray-400 text-sm">@{u.username} · Tham gia {u.joinDate}</p>
+              <p className="text-gray-400 text-sm">@{displayUsername} · {t('joined', { date: u.joinDate })}</p>
 
               {/* XP Bar */}
               <div className="mt-3 max-w-xs">
@@ -109,7 +121,7 @@ export default function ProfilePage() {
                     <div className="absolute inset-0 bg-white/20 animate-pulse rounded-full" />
                   </div>
                 </div>
-                <p className="text-gray-600 text-[10px] mt-1">{xpPercent}% đến level tiếp theo</p>
+                <p className="text-gray-600 text-[10px] mt-1">{t('xp_to_next_level', { percent: xpPercent })}</p>
               </div>
             </div>
           </div>
@@ -117,10 +129,10 @@ export default function ProfilePage() {
           {/* ── Stats row ── */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
             {[
-              { label: 'Bài viết', value: u.stats.posts, icon: '📝', color: 'text-purple-400' },
-              { label: 'Bình luận', value: u.stats.comments, icon: '💬', color: 'text-blue-400' },
-              { label: 'Dự đoán đúng', value: u.stats.correctPredictions, icon: '🎯', color: 'text-emerald-400' },
-              { label: 'Trận đã xem', value: u.stats.matchesWatched, icon: '📺', color: 'text-amber-400' },
+              { label: t('stat_posts'), value: u.stats.posts, icon: '📝', color: 'text-purple-400' },
+              { label: t('stat_comments'), value: u.stats.comments, icon: '💬', color: 'text-blue-400' },
+              { label: t('stat_correct_preds'), value: u.stats.correctPredictions, icon: '🎯', color: 'text-emerald-400' },
+              { label: t('stat_matches_watched'), value: u.stats.matchesWatched, icon: '📺', color: 'text-amber-400' },
             ].map((s) => (
               <div key={s.label} className="bg-white/[0.04] border border-white/[0.08] rounded-xl p-4 text-center hover:border-white/[0.15] transition-colors">
                 <span className="text-2xl block mb-1">{s.icon}</span>
@@ -141,19 +153,20 @@ export default function ProfilePage() {
               {/* 🏆 Achievements */}
               <section className="bg-white/[0.04] border border-white/[0.08] rounded-2xl p-5">
                 <h2 className="text-base font-bold text-white mb-4 flex items-center gap-2">
-                  🏆 <span>Thành tích</span>
-                  <span className="ml-auto text-xs text-gray-500">{u.achievements.filter((a) => a.unlocked).length}/{u.achievements.length} mở khóa</span>
+                  <span>{t('achievements')}</span>
+                  <span className="ml-auto text-xs text-gray-500">
+                    {t('achievements_unlocked', { count: u.achievements.filter((a) => a.unlocked).length, total: u.achievements.length })}
+                  </span>
                 </h2>
                 <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
                   {u.achievements.map((a) => (
                     <div
                       key={a.id}
                       title={`${a.name}: ${a.description}`}
-                      className={`relative flex flex-col items-center gap-1.5 p-3 rounded-xl border transition-all duration-200 cursor-default ${
-                        a.unlocked
-                          ? `${rarityStyles[a.rarity]} hover:scale-105`
-                          : 'border-white/[0.05] bg-white/[0.02] opacity-40'
-                      }`}
+                      className={`relative flex flex-col items-center gap-1.5 p-3 rounded-xl border transition-all duration-200 cursor-default ${a.unlocked
+                        ? `${rarityStyles[a.rarity]} hover:scale-105`
+                        : 'border-white/[0.05] bg-white/[0.02] opacity-40'
+                        }`}
                     >
                       <span className={`text-2xl ${!a.unlocked ? 'grayscale' : ''}`}>{a.icon}</span>
                       <span className="text-[10px] font-medium text-center leading-tight">{a.name}</span>
@@ -174,7 +187,7 @@ export default function ProfilePage() {
               {/* ⚽ Favourite Teams */}
               <section className="bg-white/[0.04] border border-white/[0.08] rounded-2xl p-5">
                 <h2 className="text-base font-bold text-white mb-4 flex items-center gap-2">
-                  ⚽ <span>Đội bóng yêu thích</span>
+                  <span>{t('fav_teams')}</span>
                 </h2>
                 <div className="flex flex-wrap gap-2">
                   {u.favoriteTeams.map((team) => (
@@ -186,7 +199,7 @@ export default function ProfilePage() {
                     </span>
                   ))}
                   <button className="px-3 py-1.5 border border-dashed border-white/[0.15] text-gray-500 text-sm rounded-full hover:border-emerald-500/40 hover:text-emerald-400 transition">
-                    + Thêm
+                    + {t('btn_add')}
                   </button>
                 </div>
               </section>
@@ -194,8 +207,8 @@ export default function ProfilePage() {
               {/* 📰 Football Journal */}
               <section className="bg-white/[0.04] border border-white/[0.08] rounded-2xl p-5">
                 <h2 className="text-base font-bold text-white mb-5 flex items-center gap-2">
-                  📰 <span>Football Journal</span>
-                  <span className="ml-auto text-xs text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">5 ngày gần nhất</span>
+                  <span>{t('football_journal')}</span>
+                  <span className="ml-auto text-xs text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">{t('last_5_days')}</span>
                 </h2>
                 <div className="relative flex flex-col gap-0">
                   {/* Timeline line */}
@@ -204,11 +217,10 @@ export default function ProfilePage() {
                   {u.journal.map((day, i) => (
                     <div key={day.date} className="relative flex gap-4 pb-5 last:pb-0">
                       {/* Dot */}
-                      <div className={`relative z-10 flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold border ${
-                        i === 0
-                          ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-300'
-                          : 'bg-white/[0.05] border-white/[0.10] text-gray-400'
-                      }`}>
+                      <div className={`relative z-10 flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold border ${i === 0
+                        ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-300'
+                        : 'bg-white/[0.05] border-white/[0.10] text-gray-400'
+                        }`}>
                         {day.date.split('/')[0]}
                       </div>
 
@@ -220,9 +232,9 @@ export default function ProfilePage() {
                         <div className="flex items-center justify-between mb-1">
                           <span className="text-sm font-semibold text-white">{day.date}</span>
                           <span className="text-xs text-gray-500">
-                            {day.matches.length > 0 ? `${day.matches.length} trận` : ''}
-                            {day.predictions > 0 ? ` · ${day.predictions} dự đoán` : ''}
-                            {day.posts > 0 ? ` · ${day.posts} bài` : ''}
+                            {day.matches.length > 0 ? t('journal_matches', { count: day.matches.length }) : ''}
+                            {day.predictions > 0 ? (day.matches.length > 0 ? ` · ${t('journal_preds', { count: day.predictions })}` : t('journal_preds', { count: day.predictions })) : ''}
+                            {day.posts > 0 ? ((day.matches.length > 0 || day.predictions > 0) ? ` · ${t('journal_posts', { count: day.posts })}` : t('journal_posts', { count: day.posts })) : ''}
                           </span>
                         </div>
 
@@ -235,16 +247,16 @@ export default function ProfilePage() {
                           ))}
                           {day.predictions > 0 && (
                             <span className="text-xs px-2 py-0.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 rounded-full">
-                              🎯 {day.predictions} dự đoán
+                              🎯 {t('journal_preds', { count: day.predictions })}
                             </span>
                           )}
                           {day.posts > 0 && (
                             <span className="text-xs px-2 py-0.5 bg-purple-500/10 border border-purple-500/20 text-purple-300 rounded-full">
-                              📝 {day.posts} bài viết
+                              📝 {t('journal_posts', { count: day.posts })}
                             </span>
                           )}
                           {day.matches.length === 0 && day.predictions === 0 && day.posts === 0 && (
-                            <span className="text-xs text-gray-600 italic">Không có hoạt động</span>
+                            <span className="text-xs text-gray-600 italic">{t('journal_no_activity')}</span>
                           )}
                         </div>
                       </div>
@@ -260,7 +272,7 @@ export default function ProfilePage() {
               {/* 🎯 Prediction Stats */}
               <section className="bg-white/[0.04] border border-white/[0.08] rounded-2xl p-5">
                 <h2 className="text-base font-bold text-white mb-5 flex items-center gap-2">
-                  🎯 <span>Thống kê dự đoán</span>
+                  <span>{t('prediction_stats')}</span>
                 </h2>
 
                 {/* Donut-style accuracy visual */}
@@ -284,25 +296,25 @@ export default function ProfilePage() {
                     </svg>
                     <div className="absolute inset-0 flex flex-col items-center justify-center">
                       <span className="text-xl font-black text-emerald-400">{u.predictionStats.accuracy}%</span>
-                      <span className="text-[9px] text-gray-500">chính xác</span>
+                      <span className="text-[9px] text-gray-500">{t('accuracy')}</span>
                     </div>
                   </div>
 
                   <div className="flex flex-col gap-2 text-sm">
                     <div className="flex justify-between gap-4">
-                      <span className="text-gray-400">Tổng dự đoán</span>
+                      <span className="text-gray-400">{t('pred_total')}</span>
                       <span className="text-white font-semibold">{u.predictionStats.total}</span>
                     </div>
                     <div className="flex justify-between gap-4">
-                      <span className="text-gray-400">Dự đoán đúng</span>
+                      <span className="text-gray-400">{t('pred_correct')}</span>
                       <span className="text-emerald-400 font-semibold">{u.predictionStats.correct}</span>
                     </div>
                     <div className="flex justify-between gap-4">
-                      <span className="text-gray-400">Chuỗi hiện tại</span>
+                      <span className="text-gray-400">{t('pred_streak')}</span>
                       <span className="text-amber-400 font-semibold">🔥 {u.predictionStats.streak}</span>
                     </div>
                     <div className="flex justify-between gap-4">
-                      <span className="text-gray-400">Chuỗi tốt nhất</span>
+                      <span className="text-gray-400">{t('pred_best_streak')}</span>
                       <span className="text-purple-400 font-semibold">{u.predictionStats.bestStreak}</span>
                     </div>
                   </div>
@@ -310,7 +322,7 @@ export default function ProfilePage() {
 
                 {/* XP from predictions */}
                 <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl flex items-center justify-between">
-                  <span className="text-sm text-gray-400">XP từ dự đoán</span>
+                  <span className="text-sm text-gray-400">{t('xp_from_preds')}</span>
                   <span className="text-emerald-400 font-bold text-sm">+{u.predictionStats.xpEarned.toLocaleString()} XP</span>
                 </div>
               </section>
@@ -318,7 +330,7 @@ export default function ProfilePage() {
               {/* 🔥 Recent Activity */}
               <section className="bg-white/[0.04] border border-white/[0.08] rounded-2xl p-5">
                 <h2 className="text-base font-bold text-white mb-4 flex items-center gap-2">
-                  🔥 <span>Hoạt động gần đây</span>
+                  <span>{t('recent_activity')}</span>
                 </h2>
                 <div className="flex flex-col gap-3">
                   {u.recentActivity.map((act) => (
@@ -342,7 +354,7 @@ export default function ProfilePage() {
               {/* 👥 Communities */}
               <section className="bg-white/[0.04] border border-white/[0.08] rounded-2xl p-5">
                 <h2 className="text-base font-bold text-white mb-4 flex items-center gap-2">
-                  👥 <span>Cộng đồng đang tham gia</span>
+                  <span>{t('joined_communities')}</span>
                   <span className="ml-auto text-xs text-gray-500">{u.joinedCommunities.length}</span>
                 </h2>
                 <div className="flex flex-col gap-2">

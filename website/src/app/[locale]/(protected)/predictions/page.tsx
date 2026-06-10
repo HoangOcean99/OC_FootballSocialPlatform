@@ -10,6 +10,7 @@ import {
   LeaderboardEntry,
   formatNumber,
 } from '@/lib/mockData';
+import { useTranslations } from 'next-intl';
 
 type MainTab = 'predict' | 'mine' | 'leaderboard';
 
@@ -30,6 +31,7 @@ type PredState = {
 const rankMedal: Record<number, string> = { 1: '🥇', 2: '🥈', 3: '🥉' };
 
 export default function PredictionsPage() {
+  const t = useTranslations('Predictions');
   const [activeTab, setActiveTab] = useState<MainTab>('predict');
   const [predStates, setPredStates] = useState<Record<string, PredState>>(
     Object.fromEntries(
@@ -60,7 +62,7 @@ export default function PredictionsPage() {
     const state = predStates[match.id];
     if (!state.outcome) return;
     setPredStates((prev) => ({ ...prev, [match.id]: { ...prev[match.id], confirmed: true } }));
-    showToast(`✅ Đã xác nhận! +${match.xpReward} XP`);
+    showToast(`✅ ${t('toast_confirmed')} +${match.xpReward} XP`);
   };
 
   const showToast = (msg: string) => {
@@ -90,17 +92,17 @@ export default function PredictionsPage() {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <h1 className="text-3xl font-bold text-white flex items-center gap-3">
-                🎯 <span>Trung tâm Dự đoán</span>
+                🎯 <span>{t('title').replace('🎯 ', '')}</span>
               </h1>
-              <p className="text-gray-400 mt-1 text-sm">Dự đoán kết quả, kiếm XP và leo BXH cùng cộng đồng</p>
+              <p className="text-gray-400 mt-1 text-sm">{t('subtitle')}</p>
             </div>
 
             {/* User quick stats */}
             <div className="flex gap-3">
               {[
-                { label: 'XP hiện tại', value: USER_XP.toLocaleString(), icon: '⚡', color: 'text-amber-400' },
-                { label: 'Độ chính xác', value: `${USER_ACCURACY}%`, icon: '🎯', color: 'text-emerald-400' },
-                { label: 'Vị trí BXH', value: `#${USER_RANK}`, icon: '🏆', color: 'text-blue-400' },
+                { label: t('stat_current_xp'), value: USER_XP.toLocaleString(), icon: '⚡', color: 'text-amber-400' },
+                { label: t('stat_accuracy'), value: `${USER_ACCURACY}%`, icon: '🎯', color: 'text-emerald-400' },
+                { label: t('stat_rank'), value: `#${USER_RANK}`, icon: '🏆', color: 'text-blue-400' },
               ].map((s) => (
                 <div key={s.label} className="text-center px-3 py-2 bg-white/[0.04] border border-white/[0.08] rounded-xl min-w-[80px]">
                   <p className={`text-lg font-black ${s.color}`}>{s.value}</p>
@@ -115,9 +117,9 @@ export default function PredictionsPage() {
         <div className="flex gap-1 mb-8 bg-white/[0.03] rounded-xl p-1 border border-white/[0.06] w-fit max-w-full overflow-x-auto scrollbar-hide">
           {(
             [
-              { id: 'predict', label: '🎮 Dự đoán ngay' },
-              { id: 'mine', label: '📋 Dự đoán của tôi' },
-              { id: 'leaderboard', label: '🏆 Bảng xếp hạng' },
+              { id: 'predict', label: t('tab_predict') },
+              { id: 'mine', label: t('tab_mine') },
+              { id: 'leaderboard', label: t('tab_leaderboard') },
             ] as { id: MainTab; label: string }[]
           ).map((tab) => (
             <button
@@ -163,9 +165,9 @@ export default function PredictionsPage() {
             {/* Summary bar */}
             <div className="grid grid-cols-3 gap-3 mb-2">
               {[
-                { label: 'Dự đoán đúng', value: MY_PREDICTIONS.filter((p) => p.result === 'win').length, color: 'text-emerald-400', bg: 'bg-emerald-500/10 border-emerald-500/20' },
-                { label: 'Dự đoán sai', value: MY_PREDICTIONS.filter((p) => p.result === 'loss').length, color: 'text-red-400', bg: 'bg-red-500/10 border-red-500/20' },
-                { label: 'Đang chờ', value: MY_PREDICTIONS.filter((p) => p.result === 'pending').length, color: 'text-amber-400', bg: 'bg-amber-500/10 border-amber-500/20' },
+                { label: t('stat_correct'), value: MY_PREDICTIONS.filter((p) => p.result === 'win').length, color: 'text-emerald-400', bg: 'bg-emerald-500/10 border-emerald-500/20' },
+                { label: t('stat_wrong'), value: MY_PREDICTIONS.filter((p) => p.result === 'loss').length, color: 'text-red-400', bg: 'bg-red-500/10 border-red-500/20' },
+                { label: t('stat_pending'), value: MY_PREDICTIONS.filter((p) => p.result === 'pending').length, color: 'text-amber-400', bg: 'bg-amber-500/10 border-amber-500/20' },
               ].map((s) => (
                 <div key={s.label} className={`text-center p-3 rounded-xl border ${s.bg}`}>
                   <p className={`text-2xl font-black ${s.color}`}>{s.value}</p>
@@ -205,6 +207,7 @@ function PredictCard({
   onScore: (id: string, side: 'home' | 'away', v: number) => void;
   onConfirm: (m: PredMatch) => void;
 }) {
+  const t = useTranslations('Predictions');
   const isUCL = match.competition.includes('Champions');
 
   return (
@@ -217,7 +220,7 @@ function PredictCard({
       {state.confirmed && (
         <div className="absolute inset-0 bg-emerald-500/5 z-10 flex items-center justify-center">
           <div className="bg-emerald-500/90 backdrop-blur-sm px-6 py-3 rounded-xl text-white font-bold text-lg shadow-2xl">
-            ✅ Đã xác nhận · +{match.xpReward} XP
+            ✅ {t('btn_confirmed')} · +{match.xpReward} XP
           </div>
         </div>
       )}
@@ -257,9 +260,9 @@ function PredictCard({
         <div className="flex gap-2 mb-4">
           {(
             [
-              { key: 'home', label: `${match.homeTeam} Thắng` },
-              { key: 'draw', label: 'Hòa' },
-              { key: 'away', label: `${match.awayTeam} Thắng` },
+              { key: 'home', label: t('outcome_win', { team: match.homeTeam }) },
+              { key: 'draw', label: t('outcome_draw') },
+              { key: 'away', label: t('outcome_win', { team: match.awayTeam }) },
             ] as { key: 'home' | 'draw' | 'away'; label: string }[]
           ).map((o) => (
             <button
@@ -279,7 +282,7 @@ function PredictCard({
 
         {/* Score prediction */}
         <div className="flex items-center justify-center gap-3 mb-4">
-          <span className="text-xs text-gray-500">Tỷ số dự đoán:</span>
+          <span className="text-xs text-gray-500">{t('score_predict_label')}</span>
           <div className="flex items-center gap-2">
             <ScoreInput
               value={state.scoreHome}
@@ -307,7 +310,7 @@ function PredictCard({
               : 'bg-white/[0.04] text-gray-600 cursor-not-allowed border border-white/[0.05]'
           }`}
         >
-          {state.confirmed ? '✅ Đã xác nhận dự đoán' : '⚡ Xác nhận dự đoán'}
+          {state.confirmed ? `✅ ${t('btn_confirmed')}` : `⚡ ${t('btn_confirm')}`}
         </button>
       </div>
     </div>
@@ -351,17 +354,18 @@ function ScoreInput({
 // My Prediction Card
 // ────────────────────────────────────────────────────────────
 function MyPredCard({ pred }: { pred: MyPred }) {
+  const t = useTranslations('Predictions');
   const resultStyles = {
-    win: { badge: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30', label: '✅ Đúng', dot: 'bg-emerald-400' },
-    loss: { badge: 'bg-red-500/20 text-red-300 border-red-500/30', label: '❌ Sai', dot: 'bg-red-400' },
-    pending: { badge: 'bg-amber-500/20 text-amber-300 border-amber-500/30', label: '⏳ Chờ kết quả', dot: 'bg-amber-400' },
+    win: { badge: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30', label: `✅ ${t('badge_correct')}`, dot: 'bg-emerald-400' },
+    loss: { badge: 'bg-red-500/20 text-red-300 border-red-500/30', label: `❌ ${t('badge_wrong')}`, dot: 'bg-red-400' },
+    pending: { badge: 'bg-amber-500/20 text-amber-300 border-amber-500/30', label: `⏳ ${t('badge_pending')}`, dot: 'bg-amber-400' },
   };
   const rs = resultStyles[pred.result ?? 'pending'];
 
   const outcomeLabel = {
-    home: `${pred.homeTeam} thắng`,
-    draw: 'Hòa',
-    away: `${pred.awayTeam} thắng`,
+    home: t('outcome_win', { team: pred.homeTeam }),
+    draw: t('outcome_draw'),
+    away: t('outcome_win', { team: pred.awayTeam }),
   }[pred.prediction];
 
   return (
@@ -380,7 +384,7 @@ function MyPredCard({ pred }: { pred: MyPred }) {
 
       {/* Prediction */}
       <div className="flex flex-col items-start sm:items-center gap-1">
-        <span className="text-xs text-gray-500">Dự đoán</span>
+        <span className="text-xs text-gray-500">{t('my_pred_label')}</span>
         <span className="text-sm font-semibold text-white">{outcomeLabel}</span>
         <span className="text-xs text-emerald-500">{pred.scoreHome} — {pred.scoreAway}</span>
       </div>
@@ -388,7 +392,7 @@ function MyPredCard({ pred }: { pred: MyPred }) {
       {/* Actual */}
       {pred.actualScore && (
         <div className="flex flex-col items-start sm:items-center gap-1">
-          <span className="text-xs text-gray-500">Kết quả</span>
+          <span className="text-xs text-gray-500">{t('my_result_label')}</span>
           <span className="text-sm font-bold text-white">{pred.actualScore}</span>
         </div>
       )}
@@ -409,7 +413,9 @@ function MyPredCard({ pred }: { pred: MyPred }) {
 // ────────────────────────────────────────────────────────────
 // Leaderboard Tab
 // ────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────
 function LeaderboardTab() {
+  const t = useTranslations('Predictions');
   const topThree = LEADERBOARD.slice(0, 3);
   const rest = LEADERBOARD.slice(3);
 
@@ -431,10 +437,10 @@ function LeaderboardTab() {
           {/* Table header */}
           <div className="grid grid-cols-[40px_1fr_80px_80px_80px_80px] gap-2 px-4 py-2 text-xs text-gray-500 uppercase tracking-wider mb-2">
             <span>#</span>
-            <span>Người chơi</span>
-            <span className="text-center">Đúng</span>
-            <span className="text-center">Tổng</span>
-            <span className="text-center">Chính xác</span>
+            <span>{t('lb_player')}</span>
+            <span className="text-center">{t('lb_correct')}</span>
+            <span className="text-center">{t('lb_total')}</span>
+            <span className="text-center">{t('lb_accuracy')}</span>
             <span className="text-right">XP</span>
           </div>
 
@@ -459,6 +465,7 @@ function PodiumCard({
   height: string;
   crown?: boolean;
 }) {
+  const t = useTranslations('Predictions');
   const medal = rankMedal[entry.rank];
   return (
     <div className={`flex flex-col items-center gap-2 flex-1 max-w-[160px] ${crown ? 'scale-105' : ''}`}>
@@ -476,13 +483,14 @@ function PodiumCard({
         } rounded-t-xl`}
       >
         <p className="text-emerald-400 font-black text-sm">{formatNumber(entry.xp)} XP</p>
-        <p className="text-gray-400 text-[10px]">{entry.accuracy}% chính xác</p>
+        <p className="text-gray-400 text-[10px]">{entry.accuracy}% {t('stat_accuracy')}</p>
       </div>
     </div>
   );
 }
 
 function LeaderboardRow({ entry }: { entry: LeaderboardEntry }) {
+  const t = useTranslations('Predictions');
   return (
     <div className={`grid grid-cols-[40px_1fr_80px_80px_80px_80px] gap-2 items-center px-4 py-3 rounded-xl border transition-all duration-200 ${
       entry.isCurrentUser
@@ -505,7 +513,7 @@ function LeaderboardRow({ entry }: { entry: LeaderboardEntry }) {
               {entry.displayName}
             </p>
             {entry.isCurrentUser && (
-              <span className="text-[9px] bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 px-1.5 py-px rounded-full whitespace-nowrap">Bạn</span>
+              <span className="text-[9px] bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 px-1.5 py-px rounded-full whitespace-nowrap">{t('lb_you')}</span>
             )}
           </div>
           <p className="text-[10px] text-gray-500 truncate">{entry.levelName} · Lv.{entry.level}</p>

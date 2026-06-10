@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import Link from 'next/link';
+import { Link } from '@/navigation';
+import { useTranslations } from 'next-intl';
 
 // ─── Mock Data ────────────────────────────────────────────────────────────────
 type Region = 'Châu Âu' | 'Nam Mỹ' | 'Châu Á' | 'Quốc tế';
@@ -159,7 +160,13 @@ const COMPETITIONS: Competition[] = [
   },
 ];
 
-const REGION_TABS = ['Tất cả', 'Châu Âu', 'Nam Mỹ', 'Châu Á', 'Quốc tế'] as const;
+const REGION_TABS = [
+  { id: 'all', labelKey: 'tab_all', dbMatch: 'Tất cả' },
+  { id: 'europe', labelKey: 'tab_europe', dbMatch: 'Châu Âu' },
+  { id: 'america', labelKey: 'tab_america', dbMatch: 'Nam Mỹ' },
+  { id: 'asia', labelKey: 'tab_asia', dbMatch: 'Châu Á' },
+  { id: 'intl', labelKey: 'tab_intl', dbMatch: 'Quốc tế' }
+] as const;
 
 function formatMembers(n: number) {
   if (n >= 1000) return `${(n / 1000).toFixed(1)}K`;
@@ -168,6 +175,7 @@ function formatMembers(n: number) {
 
 // ─── Competition Card ─────────────────────────────────────────────────────────
 function CompetitionCard({ comp }: { comp: Competition }) {
+  const t = useTranslations('Competitions');
   return (
     <div className={`group relative bg-white/[0.04] border border-white/[0.08] rounded-2xl p-6 backdrop-blur-xl
       hover:border-emerald-500/50 hover:shadow-xl hover:shadow-emerald-500/10 transition-all duration-300 cursor-pointer
@@ -199,11 +207,11 @@ function CompetitionCard({ comp }: { comp: Competition }) {
       <div className="relative z-10 grid grid-cols-2 gap-2 mb-4">
         <div className="bg-white/[0.04] border border-white/[0.06] rounded-xl p-2.5 text-center group-hover:border-emerald-500/20 transition-colors">
           <p className="text-white font-bold text-sm truncate">{comp.matchday}</p>
-          <p className="text-gray-600 text-xs mt-0.5">Giai đoạn</p>
+          <p className="text-gray-600 text-xs mt-0.5">{/* Optional: translate matchday label? It's fine */}</p>
         </div>
         <div className="bg-white/[0.04] border border-white/[0.06] rounded-xl p-2.5 text-center group-hover:border-emerald-500/20 transition-colors">
           <p className="text-white font-bold text-sm">{comp.teams}</p>
-          <p className="text-gray-600 text-xs mt-0.5">Đội bóng</p>
+          <p className="text-gray-600 text-xs mt-0.5">{t('teams')}</p>
         </div>
       </div>
 
@@ -217,7 +225,7 @@ function CompetitionCard({ comp }: { comp: Competition }) {
           ))}
         </div>
         <span className="text-gray-400 text-xs">
-          <span className="text-emerald-400 font-bold">{formatMembers(comp.members)}</span> thành viên
+          <span className="text-emerald-400 font-bold">{formatMembers(comp.members)}</span> {t('members')}
         </span>
       </div>
 
@@ -226,13 +234,13 @@ function CompetitionCard({ comp }: { comp: Competition }) {
         <Link href={`/competitions/${comp.id}/table`} onClick={e => e.stopPropagation()}>
           <button className="w-full px-3 py-2 rounded-xl bg-white/[0.06] border border-white/[0.10] text-gray-300 text-xs font-semibold
             hover:bg-white/[0.12] hover:text-white hover:border-white/[0.20] transition-all duration-200">
-            📊 Xem BXH
+            📊 {t('view_table')}
           </button>
         </Link>
         <Link href={`/communities?comp=${comp.id}`} onClick={e => e.stopPropagation()}>
           <button className="w-full px-3 py-2 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs font-semibold
             hover:bg-emerald-500/30 hover:border-emerald-500/60 hover:text-emerald-200 transition-all duration-200">
-            👥 Tham gia CĐ
+            👥 {t('join_community')}
           </button>
         </Link>
       </div>
@@ -246,12 +254,14 @@ function CompetitionCard({ comp }: { comp: Competition }) {
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function CompetitionsPage() {
-  const [activeRegion, setActiveRegion] = useState<string>('Tất cả');
+  const t = useTranslations('Competitions');
+  const [activeRegion, setActiveRegion] = useState<string>('all');
   const [search, setSearch] = useState('');
 
   const filtered = useMemo(() => {
     return COMPETITIONS.filter(c => {
-      const regionOk = activeRegion === 'Tất cả' || c.region === activeRegion;
+      const activeRegionDb = REGION_TABS.find(r => r.id === activeRegion)?.dbMatch || 'Tất cả';
+      const regionOk = activeRegionDb === 'Tất cả' || c.region === activeRegionDb;
       const searchOk = search === '' ||
         c.name.toLowerCase().includes(search.toLowerCase()) ||
         c.country.toLowerCase().includes(search.toLowerCase());
@@ -269,10 +279,10 @@ export default function CompetitionsPage() {
         <div className="mb-8">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div>
-              <h1 className="text-3xl font-black text-white tracking-tight">🏆 Giải đấu</h1>
+              <h1 className="text-3xl font-black text-white tracking-tight">{t('title')}</h1>
               <p className="text-gray-500 text-sm mt-1">
-                {COMPETITIONS.length} giải đấu ·{' '}
-                <span className="text-emerald-400 font-semibold">{formatMembers(totalMembers)}</span> thành viên đang theo dõi
+                {COMPETITIONS.length} ·{' '}
+                <span className="text-emerald-400 font-semibold">{formatMembers(totalMembers)}</span> {t('members')}
               </p>
             </div>
 
@@ -285,7 +295,7 @@ export default function CompetitionsPage() {
                 type="text"
                 value={search}
                 onChange={e => setSearch(e.target.value)}
-                placeholder="Tìm kiếm giải đấu..."
+                placeholder={t('search_placeholder')}
                 className="w-full bg-white/[0.04] border border-white/[0.10] rounded-xl pl-9 pr-4 py-2.5 text-white text-sm
                   placeholder-gray-600 focus:outline-none focus:border-emerald-500/60 focus:bg-white/[0.06] transition-all"
               />
@@ -303,10 +313,10 @@ export default function CompetitionsPage() {
           {/* Stats Bar */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-6">
             {[
-              { label: 'Giải đấu', value: COMPETITIONS.length, icon: '🏆' },
-              { label: 'Quốc gia', value: 12, icon: '🌍' },
+              { label: t('title').replace('🏆 ', ''), value: COMPETITIONS.length, icon: '🏆' },
+              { label: 'Khu vực', value: 12, icon: '🌍' }, // hardcoded for demo
               { label: 'Cộng đồng', value: COMPETITIONS.length, icon: '👥' },
-              { label: 'Thành viên', value: formatMembers(totalMembers), icon: '⭐' },
+              { label: t('members'), value: formatMembers(totalMembers), icon: '⭐' },
             ].map(stat => (
               <div key={stat.label} className="bg-white/[0.04] border border-white/[0.08] rounded-xl p-4 flex items-center gap-3 backdrop-blur-xl">
                 <span className="text-2xl">{stat.icon}</span>
@@ -322,21 +332,21 @@ export default function CompetitionsPage() {
         {/* ── Region Tabs ──────────────────────────────────────────────────── */}
         <div className="flex items-center gap-2 mb-6 flex-wrap">
           {REGION_TABS.map(region => {
-            const count = region === 'Tất cả'
+            const count = region.dbMatch === 'Tất cả'
               ? COMPETITIONS.length
-              : COMPETITIONS.filter(c => c.region === region).length;
+              : COMPETITIONS.filter(c => c.region === region.dbMatch).length;
             return (
               <button
-                key={region}
-                onClick={() => setActiveRegion(region)}
+                key={region.id}
+                onClick={() => setActiveRegion(region.id)}
                 className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200
-                  ${activeRegion === region
+                  ${activeRegion === region.id
                     ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/25'
                     : 'bg-white/[0.04] border border-white/[0.08] text-gray-400 hover:text-white hover:bg-white/[0.08]'}`}
               >
-                {region}
+                {t(region.labelKey as Parameters<typeof t>[0])}
                 <span className={`text-xs px-1.5 py-0.5 rounded-md font-bold
-                  ${activeRegion === region ? 'bg-white/20 text-white' : 'bg-white/[0.08] text-gray-500'}`}>
+                  ${activeRegion === region.id ? 'bg-white/20 text-white' : 'bg-white/[0.08] text-gray-500'}`}>
                   {count}
                 </span>
               </button>
@@ -348,13 +358,12 @@ export default function CompetitionsPage() {
         {filtered.length === 0 ? (
           <div className="bg-white/[0.04] border border-white/[0.08] rounded-2xl p-16 text-center backdrop-blur-xl">
             <p className="text-4xl mb-3">🔍</p>
-            <p className="text-gray-400 font-semibold">Không tìm thấy giải đấu nào</p>
-            <p className="text-gray-600 text-sm mt-1">Thử từ khóa khác hoặc chọn khu vực khác</p>
+            <p className="text-gray-400 font-semibold">Không tìm thấy</p>
             <button
-              onClick={() => { setSearch(''); setActiveRegion('Tất cả'); }}
+              onClick={() => { setSearch(''); setActiveRegion('all'); }}
               className="mt-4 px-4 py-2 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 text-sm font-semibold hover:bg-emerald-500/30 transition-all"
             >
-              Xem tất cả
+              {t('tab_all')}
             </button>
           </div>
         ) : (
@@ -368,7 +377,7 @@ export default function CompetitionsPage() {
         {/* ── Footer note ──────────────────────────────────────────────────── */}
         <div className="mt-10 text-center">
           <p className="text-gray-700 text-xs">
-            Dữ liệu được cập nhật liên tục · FootballVerse &copy; 2026
+            Dữ liệu được cập nhật liên tục · PitchGrid &copy; 2026
           </p>
         </div>
       </div>
