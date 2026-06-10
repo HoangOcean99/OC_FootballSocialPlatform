@@ -3,8 +3,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { useRouter, Link } from '@/navigation';
 import { useAuthStore } from '@/store/useAuthStore';
-import { motion, useScroll, useTransform, useSpring } from 'framer-motion';
-import { Trophy, Users, MessageSquare, BookOpen, Star, Sparkles, Activity, ChevronRight, Check, Menu, X, Globe } from 'lucide-react';
+import { motion, useScroll, useTransform, useSpring, AnimatePresence } from 'framer-motion';
+import { Trophy, Users, MessageSquare, BookOpen, Star, Sparkles, Activity, ChevronRight, Check, Menu, X, Globe, ChevronUp } from 'lucide-react';
 import { useTranslations, useLocale } from 'next-intl';
 
 const IMAGES = [
@@ -21,6 +21,14 @@ export default function LandingPage() {
   const { isAuthenticated } = useAuthStore();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isLangMenuOpen, setIsLangMenuOpen] = useState(false);
+  const [popupContent, setPopupContent] = useState<'terms' | 'privacy' | null>(null);
+  const [showScrollTop, setShowScrollTop] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => setShowScrollTop(window.scrollY > 500);
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const t = useTranslations('Landing');
   const locale = useLocale();
@@ -98,7 +106,7 @@ export default function LandingPage() {
           </div>
 
           {/* Center: Desktop Navigation */}
-          <nav className="hidden lg:flex items-center justify-center gap-8 text-sm font-semibold text-gray-400 shrink-0">
+          <nav className="hidden lg:flex items-center justify-center gap-10 text-sm font-semibold text-gray-400 shrink-0">
             <a href="#hero" className="hover:text-white transition-colors">{t('nav_about')}</a>
             <a href="#gallery" className="hover:text-white transition-colors">{t('nav_gallery')}</a>
             <a href="#features" className="hover:text-white transition-colors">{t('nav_features')}</a>
@@ -443,16 +451,116 @@ export default function LandingPage() {
       </section>
 
       {/* ── FOOTER ── */}
-      <footer className="relative z-20 border-t border-white/[0.05] bg-[#03060a] py-12">
-        <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-6 text-gray-500 font-medium">
+      <footer className="relative z-20 border-t border-white/[0.05] bg-[#03060a] pt-8 pb-4">
+        {/* Hàng trên: Logo & Links */}
+        <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-4 text-gray-500 font-medium mb-6">
+          {/* Logo (Trái) */}
           <div className="flex items-center text-white">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/logo.png" alt="Logo" className="h-8 w-auto object-contain rounded-md" />
+            <img src="/logo.png" alt="Logo" className="h-8 w-auto object-contain rounded-md mr-2" />
             <span className="font-bold text-xl tracking-tight">Pitch<span className="text-emerald-400">Grid</span></span>
           </div>
-          <div>{t('footer_copy')}</div>
+
+          {/* Links (Phải) */}
+          <div className="flex gap-6 text-sm">
+            <button onClick={() => setPopupContent('terms')} className="hover:text-emerald-400 transition-colors">Điều khoản Dịch vụ</button>
+            <button onClick={() => setPopupContent('privacy')} className="hover:text-emerald-400 transition-colors">Chính sách Bảo mật</button>
+          </div>
+        </div>
+
+        {/* Hàng dưới: Copyright với viền xám full màn hình */}
+        <div className="border-t border-gray-500/30 w-full">
+          <div className="max-w-7xl mx-auto px-6 pt-4 text-center text-sm text-gray-500">
+            {t('footer_copy')}
+          </div>
         </div>
       </footer>
+
+      {/* ── POPUP MODAL ── */}
+      <AnimatePresence>
+        {popupContent && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+            onClick={() => setPopupContent(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-[#0a111a] border border-white/10 rounded-2xl w-full max-w-3xl max-h-[80vh] overflow-hidden flex flex-col shadow-2xl"
+            >
+              <div className="flex items-center justify-between p-6 border-b border-white/5 bg-white/5">
+                <h3 className="text-2xl font-bold text-white">
+                  {popupContent === 'terms' ? 'Điều khoản Dịch vụ' : 'Chính sách Bảo mật'}
+                </h3>
+                <button
+                  onClick={() => setPopupContent(null)}
+                  className="p-2 text-gray-400 hover:text-white rounded-lg hover:bg-white/10 transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              <div className="p-6 overflow-y-auto text-gray-300 space-y-4 custom-scrollbar">
+                {popupContent === 'terms' ? (
+                  <>
+                    <h4 className="text-lg font-semibold text-emerald-400">1. Chấp nhận điều khoản</h4>
+                    <p>Bằng việc truy cập và sử dụng PitchGrid, bạn đồng ý tuân thủ các điều khoản và điều kiện được quy định tại đây. Nếu bạn không đồng ý với bất kỳ phần nào của các điều khoản này, vui lòng không sử dụng nền tảng của chúng tôi.</p>
+                    <h4 className="text-lg font-semibold text-emerald-400">2. Quyền và Trách nhiệm của Người dùng</h4>
+                    <p>Bạn hoàn toàn chịu trách nhiệm về nội dung mà mình đăng tải trên nền tảng. Nghiêm cấm các hành vi đăng tải nội dung phản cảm, vi phạm pháp luật, ngôn từ thù địch, hoặc xâm phạm quyền riêng tư của người khác.</p>
+                    <h4 className="text-lg font-semibold text-emerald-400">3. Quyền sở hữu trí tuệ</h4>
+                    <p>Mọi nội dung, logo, hình ảnh và mã nguồn trên PitchGrid thuộc quyền sở hữu của PitchGrid hoặc được cấp phép hợp lệ. Không được phép sao chép, phân phối hoặc sử dụng cho mục đích thương mại mà không có sự cho phép bằng văn bản.</p>
+                    <h4 className="text-lg font-semibold text-emerald-400">4. Chấm dứt tài khoản</h4>
+                    <p>Chúng tôi có quyền đình chỉ hoặc xóa tài khoản của bạn bất cứ lúc nào nếu phát hiện vi phạm các điều khoản này, mà không cần thông báo trước.</p>
+                    <h4 className="text-lg font-semibold text-emerald-400">5. Thay đổi điều khoản</h4>
+                    <p>PitchGrid có quyền cập nhật hoặc thay đổi Điều khoản Dịch vụ này bất cứ lúc nào. Các thay đổi sẽ có hiệu lực ngay khi được đăng tải trên trang web.</p>
+                  </>
+                ) : (
+                  <>
+                    <h4 className="text-lg font-semibold text-emerald-400">1. Thu thập thông tin</h4>
+                    <p>Chúng tôi thu thập các thông tin cơ bản khi bạn đăng ký tài khoản, bao gồm nhưng không giới hạn ở: Tên hiển thị, địa chỉ email, và ảnh đại diện. Ngoài ra, chúng tôi cũng thu thập dữ liệu về cách bạn sử dụng nền tảng (như các trận đấu bạn xem, cộng đồng bạn tham gia) để cá nhân hóa trải nghiệm.</p>
+                    <h4 className="text-lg font-semibold text-emerald-400">2. Sử dụng thông tin</h4>
+                    <p>Thông tin của bạn được sử dụng để cung cấp dịch vụ, cải thiện trải nghiệm người dùng, hiển thị nội dung phù hợp, và gửi các thông báo quan trọng liên quan đến tài khoản của bạn.</p>
+                    <h4 className="text-lg font-semibold text-emerald-400">3. Bảo vệ dữ liệu</h4>
+                    <p>PitchGrid cam kết bảo vệ thông tin cá nhân của bạn bằng các biện pháp bảo mật tiêu chuẩn ngành. Tuy nhiên, xin lưu ý rằng không có phương thức truyền tải dữ liệu nào qua internet là hoàn toàn an toàn 100%.</p>
+                    <h4 className="text-lg font-semibold text-emerald-400">4. Chia sẻ thông tin</h4>
+                    <p>Chúng tôi không bán, trao đổi hoặc cho thuê thông tin cá nhân của bạn cho bên thứ ba. Thông tin chỉ có thể được chia sẻ khi có yêu cầu hợp pháp từ cơ quan chức năng hoặc khi cần thiết để bảo vệ quyền lợi hợp pháp của PitchGrid.</p>
+                    <h4 className="text-lg font-semibold text-emerald-400">5. Quyền của người dùng</h4>
+                    <p>Bạn có quyền truy cập, chỉnh sửa hoặc yêu cầu xóa dữ liệu cá nhân của mình bất cứ lúc nào bằng cách liên hệ với bộ phận hỗ trợ khách hàng của chúng tôi.</p>
+                  </>
+                )}
+              </div>
+              <div className="p-6 border-t border-white/5 bg-white/5 flex justify-end">
+                <button
+                  onClick={() => setPopupContent(null)}
+                  className="px-6 py-2 bg-emerald-500 hover:bg-emerald-400 text-[#03060a] font-bold rounded-xl transition-colors shadow-lg shadow-emerald-500/20"
+                >
+                  Đã hiểu
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── SCROLL TO TOP BUTTON ── */}
+      <AnimatePresence>
+        {showScrollTop && (
+          <motion.button
+            initial={{ opacity: 0, scale: 0.5, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.5, y: 20 }}
+            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+            className="fixed bottom-6 right-6 md:bottom-8 md:right-8 z-[90] p-4 rounded-full bg-emerald-400 text-[#03060a] shadow-[0_0_30px_rgba(52,211,153,0.6)] hover:shadow-[0_0_50px_rgba(52,211,153,0.8)] hover:bg-emerald-300 hover:scale-110 hover:-translate-y-1 transition-all duration-300 flex items-center justify-center"
+            aria-label="Cuộn lên đầu trang"
+          >
+            <ChevronUp className="w-6 h-6 stroke-[3]" />
+          </motion.button>
+        )}
+      </AnimatePresence>
 
     </div>
   );
