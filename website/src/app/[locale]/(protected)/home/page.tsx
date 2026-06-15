@@ -1,16 +1,39 @@
 'use client';
 
-import { useState } from 'react';
-import {
-  LIVE_MATCHES,
-  UPCOMING_MATCHES,
-  TRENDING_POSTS,
-  TOP_COMMUNITIES,
-  TOP_PREDICTORS,
-  formatKickoff,
-  formatNumber,
-} from '@/lib/mockData';
+import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
+import {
+  fetchLiveMatches,
+  fetchUpcomingMatches,
+  fetchTrendingPosts,
+  fetchTopCommunities,
+  fetchTopPredictors,
+  fetchTodayStats
+} from '@/lib/api';
+import { Match, Post, Community, Predictor } from '@football-fan/shared-types';
+
+export function formatKickoff(isoString: string): string {
+  const date = new Date(isoString);
+  const now = new Date();
+  const diffDays = Math.floor(
+    (date.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
+  );
+
+  const timeStr = date.toLocaleTimeString('vi-VN', {
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+
+  if (diffDays === 0) return `Hôm nay ${timeStr}`;
+  if (diffDays === 1) return `Ngày mai ${timeStr}`;
+  return `${date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })} ${timeStr}`;
+}
+
+export function formatNumber(num: number): string {
+  if (num >= 1_000_000) return `${(num / 1_000_000).toFixed(1)}M`;
+  if (num >= 1_000) return `${(num / 1_000).toFixed(1)}K`;
+  return num.toString();
+}
 
 // ─────────────────────────────────────────────
 // Sub-components
@@ -32,7 +55,7 @@ function LiveBadge({ minute, status }: { minute: number; status: string }) {
 }
 
 /** Single Live Match card */
-function LiveMatchCard({ match }: { match: (typeof LIVE_MATCHES)[0] }) {
+function LiveMatchCard({ match }: { match: Match }) {
   return (
     <div className="relative shrink-0 w-56 rounded-2xl bg-white/[0.04] border border-red-500/20 backdrop-blur-xl overflow-hidden group hover:border-red-500/40 transition-all duration-300 hover:shadow-[0_0_30px_rgba(239,68,68,0.15)] cursor-pointer">
       {/* Red glow top stripe */}
@@ -90,7 +113,7 @@ function LiveMatchCard({ match }: { match: (typeof LIVE_MATCHES)[0] }) {
 }
 
 /** Post card */
-function PostCard({ post }: { post: (typeof TRENDING_POSTS)[0] }) {
+function PostCard({ post }: { post: Post }) {
   const [liked, setLiked] = useState(post.isLiked);
   const [likeCount, setLikeCount] = useState(post.likes);
 
@@ -208,7 +231,7 @@ function PostCard({ post }: { post: (typeof TRENDING_POSTS)[0] }) {
 }
 
 /** Upcoming match row */
-function UpcomingMatchRow({ match }: { match: (typeof UPCOMING_MATCHES)[0] }) {
+function UpcomingMatchRow({ match }: { match: Match }) {
   return (
     <div className="flex items-center gap-3 py-2.5 hover:bg-white/[0.03] rounded-xl px-2 -mx-2 transition-colors cursor-pointer group">
       {/* Teams */}
@@ -240,7 +263,7 @@ function UpcomingMatchRow({ match }: { match: (typeof UPCOMING_MATCHES)[0] }) {
 }
 
 /** Community card in right sidebar */
-function CommunityCard({ community }: { community: (typeof TOP_COMMUNITIES)[0] }) {
+function CommunityCard({ community }: { community: Community }) {
   const t = useTranslations('Home');
   const [joined, setJoined] = useState(community.isJoined);
 
@@ -275,7 +298,7 @@ function CommunityCard({ community }: { community: (typeof TOP_COMMUNITIES)[0] }
 }
 
 /** Predictor rank row */
-function PredictorRow({ predictor }: { predictor: (typeof TOP_PREDICTORS)[0] }) {
+function PredictorRow({ predictor }: { predictor: Predictor }) {
   const t = useTranslations('Home');
   const rankColors: Record<number, string> = {
     1: 'text-yellow-400',
@@ -341,6 +364,40 @@ export default function HomePage() {
   const t = useTranslations('Home');
   const [activeTab, setActiveTab] = useState('all');
 
+  const [liveMatches, setLiveMatches] = useState<Match[]>([]);
+  const [upcomingMatches, setUpcomingMatches] = useState<Match[]>([]);
+  const [trendingPosts, setTrendingPosts] = useState<Post[]>([]);
+  const [topCommunities, setTopCommunities] = useState<Community[]>([]);
+  const [topPredictors, setTopPredictors] = useState<Predictor[]>([]);
+  const [todayStats, setTodayStats] = useState({ newPosts: 0, predictionsToday: 0, onlineCount: 0 });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadData() {
+      try {
+        const [live, upcoming, posts, communities, predictors, stats] = await Promise.all([
+          fetchLiveMatches(),
+          fetchUpcomingMatches(),
+          fetchTrendingPosts(),
+          fetchTopCommunities(),
+          fetchTopPredictors(),
+          fetchTodayStats()
+        ]);
+        setLiveMatches(live);
+        setUpcomingMatches(upcoming);
+        setTrendingPosts(posts);
+        setTopCommunities(communities);
+        setTopPredictors(predictors);
+        if (stats) setTodayStats(stats);
+      } catch (error) {
+        console.error('Failed to load home page data', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadData();
+  }, []);
+
   const FEED_TABS = [
     { id: 'all', label: t('tab_all') },
     { id: 'following', label: t('tab_following') },
@@ -363,7 +420,7 @@ export default function HomePage() {
             <h2 className="text-base font-bold text-white">{t('live_now')}</h2>
           </div>
           <span className="text-xs text-gray-600">
-            {t('live_count', { count: LIVE_MATCHES.length })}
+            {t('live_count', { count: liveMatches.length })}
           </span>
           <div className="flex-1 h-px bg-white/[0.05]" />
           <button className="text-xs text-emerald-500 hover:text-emerald-400 transition-colors">
@@ -373,9 +430,13 @@ export default function HomePage() {
 
         {/* Horizontal scroll */}
         <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
-          {LIVE_MATCHES.map((match) => (
-            <LiveMatchCard key={match.id} match={match} />
-          ))}
+          {loading ? (
+            <div className="text-sm text-gray-400 p-4">Loading matches...</div>
+          ) : (
+            liveMatches.map((match) => (
+              <LiveMatchCard key={match.id} match={match} />
+            ))
+          )}
 
           {/* Placeholder card */}
           <div className="shrink-0 w-40 rounded-2xl border border-dashed border-white/[0.08] flex flex-col items-center justify-center gap-2 text-gray-700 hover:text-gray-500 hover:border-white/[0.15] transition-all cursor-pointer p-4">
@@ -435,9 +496,13 @@ export default function HomePage() {
 
           {/* Posts */}
           <div className="space-y-4">
-            {TRENDING_POSTS.map((post) => (
-              <PostCard key={post.id} post={post} />
-            ))}
+            {loading ? (
+              <div className="text-sm text-gray-400">Loading posts...</div>
+            ) : (
+              trendingPosts.map((post) => (
+                <PostCard key={post.id} post={post} />
+              ))
+            )}
           </div>
 
           {/* Load more */}
@@ -461,9 +526,13 @@ export default function HomePage() {
               </button>
             </div>
             <div className="divide-y divide-white/[0.04]">
-              {UPCOMING_MATCHES.slice(0, 3).map((match) => (
-                <UpcomingMatchRow key={match.id} match={match} />
-              ))}
+              {loading ? (
+                <div className="text-sm text-gray-400 p-2">Loading...</div>
+              ) : (
+                upcomingMatches.slice(0, 3).map((match) => (
+                  <UpcomingMatchRow key={match.id} match={match} />
+                ))
+              )}
             </div>
           </div>
 
@@ -479,9 +548,13 @@ export default function HomePage() {
               </button>
             </div>
             <div className="divide-y divide-white/[0.04]">
-              {TOP_COMMUNITIES.slice(0, 4).map((community) => (
-                <CommunityCard key={community.id} community={community} />
-              ))}
+              {loading ? (
+                <div className="text-sm text-gray-400 p-2">Loading...</div>
+              ) : (
+                topCommunities.slice(0, 4).map((community) => (
+                  <CommunityCard key={community.id} community={community} />
+                ))
+              )}
             </div>
           </div>
 
@@ -497,9 +570,13 @@ export default function HomePage() {
               </button>
             </div>
             <div className="divide-y divide-white/[0.04]">
-              {TOP_PREDICTORS.slice(0, 3).map((predictor) => (
-                <PredictorRow key={predictor.id} predictor={predictor} />
-              ))}
+              {loading ? (
+                <div className="text-sm text-gray-400 p-2">Loading...</div>
+              ) : (
+                topPredictors.slice(0, 3).map((predictor) => (
+                  <PredictorRow key={predictor.id} predictor={predictor} />
+                ))
+              )}
             </div>
 
             {/* CTA */}
@@ -516,10 +593,10 @@ export default function HomePage() {
             </h3>
             <div className="grid grid-cols-2 gap-3">
               {[
-                { label: t('stat_live'), value: LIVE_MATCHES.length, color: 'text-red-400' },
-                { label: t('stat_new_posts'), value: '1.2K', color: 'text-sky-400' },
-                { label: t('stat_predictions'), value: '8.4K', color: 'text-violet-400' },
-                { label: t('stat_online'), value: '24K', color: 'text-emerald-400' },
+                { label: t('stat_live'), value: liveMatches.length, color: 'text-red-400' },
+                { label: t('stat_new_posts'), value: formatNumber(todayStats.newPosts), color: 'text-sky-400' },
+                { label: t('stat_predictions'), value: formatNumber(todayStats.predictionsToday), color: 'text-violet-400' },
+                { label: t('stat_online'), value: formatNumber(todayStats.onlineCount), color: 'text-emerald-400' },
               ].map(({ label, value, color }) => (
                 <div key={label} className="bg-white/[0.04] rounded-xl p-3 border border-white/[0.05]">
                   <p className={`text-lg font-black ${color}`}>{value}</p>

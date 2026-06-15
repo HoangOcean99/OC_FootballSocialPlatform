@@ -33,6 +33,7 @@ export class AuthServiceService {
       sub: user._id,
       username: user.username,
       email: user.email,
+      role: user.role,
       level: user.level,
       onboardingCompleted: user.onboardingCompleted,
     };
@@ -44,9 +45,11 @@ export class AuthServiceService {
       id: user._id,
       username: user.username,
       email: user.email,
+      role: user.role,
       avatarUrl: user.avatarUrl,
       level: user.level,
       xp: user.xp,
+      tier: user.tier || 'REGULAR',
       favoriteClubs: user.favoriteClubs,
       favoriteNationalTeams: user.favoriteNationalTeams,
       onboardingCompleted: user.onboardingCompleted,
@@ -95,6 +98,10 @@ export class AuthServiceService {
       return { error: 'Email hoặc mật khẩu không đúng' };
     }
 
+    if (user.isBanned) {
+      return { error: 'BANNED' };
+    }
+
     return {
       access_token: this.generateToken(user),
       user: this.formatUser(user),
@@ -137,6 +144,10 @@ export class AuthServiceService {
             onboardingCompleted: false,
           });
         }
+      }
+
+      if (user.isBanned) {
+        return { error: 'BANNED' };
       }
 
       return {

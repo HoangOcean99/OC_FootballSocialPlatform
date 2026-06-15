@@ -19,6 +19,9 @@ export class User {
   @Prop({ default: null })
   passwordHash: string;
 
+  @Prop({ default: 'USER' })
+  role: 'USER' | 'ADMIN';
+
   @Prop({ default: AuthProvider.LOCAL })
   provider: string;
 
@@ -40,11 +43,50 @@ export class User {
   onboardingCompleted: boolean;
 
   // Gamification
-  @Prop({ default: 'Rookie Fan' })
-  level: string;
+  @Prop({ default: 1 })
+  level: number;
 
   @Prop({ default: 0 })
   xp: number;
+
+  @Prop({ default: 'REGULAR' })
+  tier: string;
+
+  @Prop({ default: 'Chuyên gia dự đoán' }) // Default levelTitle
+  levelTitle: string;
+
+  @Prop({ default: 'Người mới' }) // Default levelName
+  levelName: string;
+
+  @Prop({ default: 1000 })
+  xpToNextLevel: number;
+
+  @Prop({ default: false })
+  isBanned: boolean;
+
+  @Prop({ type: Object, default: { posts: 0, comments: 0, correctPredictions: 0, matchesWatched: 0 } })
+  stats: { posts: number; comments: number; correctPredictions: number; matchesWatched: number };
+
+  @Prop({ type: Object, default: { total: 0, correct: 0, accuracy: 0, streak: 0, bestStreak: 0, xpEarned: 0 } })
+  predictionStats: { total: number; correct: number; accuracy: number; streak: number; bestStreak: number; xpEarned: number };
+
+  @Prop({ type: [Object], default: [] })
+  achievements: any[];
+
+  @Prop({ type: [Object], default: [] })
+  recentActivity: any[];
+
+  @Prop({ type: [Object], default: [] })
+  journal: any[];
+
+  @Prop({ type: [String], default: [] })
+  joinedCommunities: string[];
+
+  @Prop({ type: [String], default: [] })
+  communityEmojis: string[];
+
+  @Prop({ type: Date, default: Date.now })
+  lastActiveAt: Date;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

@@ -1,9 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from '@/navigation';
 import { usePathname, useRouter } from '@/navigation';
-import { LIVE_MATCHES } from '@/lib/mockData';
+import { fetchLiveMatches } from '@/lib/api';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useTranslations, useLocale } from 'next-intl';
 import { Globe } from 'lucide-react';
@@ -22,8 +22,12 @@ export default function Navbar() {
   ];
   const pathname = usePathname();
   const router = useRouter();
-  const liveCount = LIVE_MATCHES.length;
+  const [liveCount, setLiveCount] = useState(0);
   const { user, clearAuth } = useAuthStore();
+
+  useEffect(() => {
+    fetchLiveMatches().then(res => setLiveCount(res.length)).catch(console.error);
+  }, []);
 
   const handleLogout = () => {
     clearAuth();
@@ -148,16 +152,28 @@ export default function Navbar() {
                     className="w-9 h-9 rounded-xl bg-emerald-600 flex items-center justify-center text-sm font-bold text-white ring-2 ring-emerald-400/30 group-hover:ring-emerald-400/60 transition-all duration-200 overflow-hidden"
                   >
                     {user.avatarUrl ? (
-                      <img src={user.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+                      <img src={user.avatarUrl} alt="Avatar" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                     ) : (
                       initials
                     )}
                   </Link>
                   <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-400 rounded-full border-2 border-[#080d14]" />
                   <div className="absolute top-full mt-2 right-0 bg-[#0f1923] border border-white/10 rounded-xl p-2 min-w-[160px] opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none group-hover:pointer-events-auto z-50 shadow-xl before:absolute before:-top-3 before:left-0 before:right-0 before:h-3">
-                    <p className="text-white text-sm font-medium px-2 py-1">@{user.username}</p>
-                    <p className="text-gray-500 text-xs px-2 pb-1">{user.level}</p>
+                    <div className="px-2 py-1 flex items-center gap-2">
+                      <p className="text-white text-sm font-bold truncate">@{user.username}</p>
+                      {user.tier === 'PLUS' && (
+                        <span className="bg-gradient-to-r from-amber-400 to-amber-600 text-[#0f1923] text-[9px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider shadow-sm shadow-amber-500/20">
+                          PLUS
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-emerald-400 text-xs px-2 pb-1 font-medium">Lv.{user.level}</p>
                     <hr className="border-white/10 my-1" />
+                    {user.role === 'ADMIN' && (
+                      <Link href="/admin" className="block w-full text-left px-2 py-1.5 text-amber-400 hover:bg-white/10 rounded-lg text-sm transition-colors mb-1 font-bold">
+                        ⚡ Admin Portal
+                      </Link>
+                    )}
                     <Link href="/profile" className="block w-full text-left px-2 py-1.5 text-gray-300 hover:bg-white/10 hover:text-white rounded-lg text-sm transition-colors mb-1">
                       👤 Hồ sơ
                     </Link>
@@ -202,13 +218,20 @@ export default function Navbar() {
               <div className="flex items-center gap-3 bg-white/[0.03] p-4 rounded-2xl border border-white/[0.05]">
                 <div className="w-12 h-12 rounded-xl bg-emerald-600 flex items-center justify-center text-lg font-bold text-white shrink-0 overflow-hidden">
                   {user.avatarUrl ? (
-                    <img src={user.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+                    <img src={user.avatarUrl} alt="Avatar" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                   ) : (
                     initials
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-white font-bold truncate">@{user.username}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-white font-bold truncate">@{user.username}</p>
+                    {user.tier === 'PLUS' && (
+                      <span className="bg-gradient-to-r from-amber-400 to-amber-600 text-[#0f1923] text-[9px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider shadow-sm shadow-amber-500/20">
+                        PLUS
+                      </span>
+                    )}
+                  </div>
                   <p className="text-emerald-400 text-sm font-medium">{user.level}</p>
                 </div>
               </div>
@@ -262,11 +285,25 @@ export default function Navbar() {
               </div>
             </div>
 
-            {/* Mobile Logout */}
+            {/* Mobile Admin & Logout */}
             {user && (
-              <button onClick={() => { handleLogout(); setIsMobileMenuOpen(false); }} className="mt-4 flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-red-500/10 text-red-500 hover:bg-red-500/20 font-bold transition-all">
-                🚪 {t('logout')}
-              </button>
+              <div className="mt-4 flex flex-col gap-2">
+                {user.role === 'ADMIN' && (
+                  <Link 
+                    onClick={() => setIsMobileMenuOpen(false)} 
+                    href="/admin" 
+                    className="flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-amber-500/10 text-amber-500 hover:bg-amber-500/20 font-bold transition-all"
+                  >
+                    ⚡ Admin Portal
+                  </Link>
+                )}
+                <button 
+                  onClick={() => { handleLogout(); setIsMobileMenuOpen(false); }} 
+                  className="flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-red-500/10 text-red-500 hover:bg-red-500/20 font-bold transition-all"
+                >
+                  🚪 {t('logout')}
+                </button>
+              </div>
             )}
 
           </div>

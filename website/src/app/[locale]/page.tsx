@@ -7,13 +7,35 @@ import { motion, useScroll, useTransform, useSpring, AnimatePresence } from 'fra
 import { Trophy, Users, MessageSquare, BookOpen, Star, Sparkles, Activity, ChevronRight, Check, Menu, X, Globe, ChevronUp } from 'lucide-react';
 import { useTranslations, useLocale } from 'next-intl';
 
-const IMAGES = [
-  "https://images.unsplash.com/photo-1518605368461-1ee7c5320d29?q=80&w=800&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1579952363873-27f3bade9f55?q=80&w=800&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1508098682722-e99c43a406b2?q=80&w=800&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1431324155629-1a6fc1ac5e52?q=80&w=800&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1551280857-2b9bbe5260fc?q=80&w=800&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1560272564-c83b66b1ad12?q=80&w=800&auto=format&fit=crop",
+const HERO_CENTER_IMG = "/images/AnhCKWC.png";
+const HERO_RIGHT_IMG = "/images/AnhLandingPage25.jpg";
+const HERO_LEFT_IMG = "https://upload.wikimedia.org/wikipedia/commons/thumb/c/ce/Final_SuperCopa_ESP_2011_%286056383408%29.jpg/960px-Final_SuperCopa_ESP_2011_%286056383408%29.jpg";
+const CTA_BG_IMG = "/images/AnhLandingPage1.jpg";
+
+const ROW1_IMAGES = [
+  "/images/AnhLandingPage26.jpg", // De Bruyne
+  "/images/AnhLandingPage2.jpg",
+  "/images/AnhLandingPage3.jpg",
+  "/images/AnhLandingPage4.jpg",
+  "/images/AnhLandingPage5.jpg",
+  "/images/AnhLandingPage6.jpg",
+  "https://upload.wikimedia.org/wikipedia/commons/b/b3/2022_FIFA_World_Cup_France_4%E2%80%931_Australia_-_%287%29_%28cropped%29.jpg",
+  "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2e/Argentina_3-3_Francia_-_Copa_Mundial_2022_-_Montiel_patea_el_penal_de_la_victoria.jpg/960px-Argentina_3-3_Francia_-_Copa_Mundial_2022_-_Montiel_patea_el_penal_de_la_victoria.jpg",
+  "https://upload.wikimedia.org/wikipedia/commons/thumb/4/48/Argentina_vs_France_2018_World_Cup_28.jpg/960px-Argentina_vs_France_2018_World_Cup_28.jpg",
+  "https://upload.wikimedia.org/wikipedia/commons/a/ae/Emiliano_Mart%C3%ADnez_vs_Colombia%2C_1-2-2022.jpg"
+];
+
+const ROW2_IMAGES = [
+  "/images/AnhLandingPage7.jpg",
+  "/images/AnhLandingPage8.jpg",
+  "/images/AnhLandingPage27.png",
+  "/images/AnhLandingPage28.png",
+  "/images/AnhLandingPage29.png",
+  "/images/AnhLandingPage30.png",
+  "https://upload.wikimedia.org/wikipedia/commons/thumb/4/40/Festejos_en_el_Obelisco_de_Buenos_Aires_por_la_obtenci%C3%B3n_de_la_Copa_del_Mundo_de_F%C3%BAtbol_2022.jpg/960px-Festejos_en_el_Obelisco_de_Buenos_Aires_por_la_obtenci%C3%B3n_de_la_Copa_del_Mundo_de_F%C3%BAtbol_2022.jpg",
+  "https://upload.wikimedia.org/wikipedia/commons/thumb/0/07/Fiesta_en_el_Obelisco.jpg/960px-Fiesta_en_el_Obelisco.jpg",
+  "https://upload.wikimedia.org/wikipedia/commons/c/ce/Lionel-Messi-Argentina-2022-FIFA-World-Cup.jpg",
+  "https://upload.wikimedia.org/wikipedia/commons/7/7f/SzymonMarciniakReferee.jpg"
 ];
 
 export default function LandingPage() {
@@ -23,9 +45,13 @@ export default function LandingPage() {
   const [isLangMenuOpen, setIsLangMenuOpen] = useState(false);
   const [popupContent, setPopupContent] = useState<'terms' | 'privacy' | null>(null);
   const [showScrollTop, setShowScrollTop] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
 
   useEffect(() => {
-    const handleScroll = () => setShowScrollTop(window.scrollY > 500);
+    const handleScroll = () => {
+      setShowScrollTop(window.scrollY > 500);
+      setIsScrolled(window.scrollY > 20);
+    };
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
@@ -82,16 +108,24 @@ export default function LandingPage() {
     <div ref={containerRef} className="bg-[#03060a] text-white min-h-[300vh] selection:bg-emerald-500/30 font-sans">
 
       {/* ── BACKGROUND NOISE & GRADIENT ── */}
-      <div className="fixed inset-0 z-0 pointer-events-none">
-        <div className="absolute top-[-20%] left-[-10%] w-[50vw] h-[50vw] bg-emerald-600/10 rounded-full blur-[120px]" />
-        <div className="absolute top-[40%] right-[-20%] w-[60vw] h-[60vw] bg-blue-600/10 rounded-full blur-[150px]" />
-        <div className="absolute bottom-[-10%] left-[20%] w-[40vw] h-[40vw] bg-teal-600/10 rounded-full blur-[100px]" />
-        <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-10 mix-blend-overlay" />
+      <div className="fixed inset-0 z-0 pointer-events-none bg-[#03060a]">
+        {/* Dim Blurry Photographic Background */}
+        <div className="absolute inset-0 bg-[url('https://upload.wikimedia.org/wikipedia/commons/thumb/5/57/Camp_nou_before_F.C._Barcelona_-_Real_Madrid_league_match_of_2012.JPG/1920px-Camp_nou_before_F.C._Barcelona_-_Real_Madrid_league_match_of_2012.JPG')] bg-cover bg-center bg-no-repeat opacity-15 blur-[8px]" />
+        
+        {/* Gradients */}
+        <div className="absolute top-[-20%] left-[-10%] w-[50vw] h-[50vw] bg-emerald-600/20 rounded-full blur-[120px] mix-blend-screen" />
+        <div className="absolute top-[40%] right-[-20%] w-[60vw] h-[60vw] bg-blue-600/10 rounded-full blur-[150px] mix-blend-screen" />
+        <div className="absolute bottom-[-10%] left-[20%] w-[40vw] h-[40vw] bg-teal-600/15 rounded-full blur-[100px] mix-blend-screen" />
+        <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-20 mix-blend-overlay" />
       </div>
 
       {/* ── NAVBAR ── */}
-      <header className="fixed top-0 left-0 right-0 z-50 border-b border-white/[0.04] bg-[#03060a]/95 backdrop-blur-xl transition-all">
-        <div className="max-w-screen-2xl mx-auto px-4 h-16 flex items-center justify-between">
+      <header className="fixed top-0 left-0 right-0 z-50">
+        {/* Animated Background Layer */}
+        <div 
+          className={`absolute inset-0 bg-[#03060a]/95 backdrop-blur-xl border-b border-white/[0.04] transition-all duration-500 ease-out origin-top ${isScrolled ? 'scale-y-100 opacity-100' : 'scale-y-0 opacity-0'}`}
+        />
+        <div className="relative z-10 max-w-screen-2xl mx-auto px-4 h-16 flex items-center justify-between">
           
           {/* Left: Logo */}
           <div className="flex-1 flex justify-start">
@@ -132,10 +166,18 @@ export default function LandingPage() {
               </div>
             </div>
 
-            <Link href="/login" className="text-sm font-semibold text-gray-300 hover:text-white px-4 py-2">{t('nav_login')}</Link>
-            <Link href="/register" className="group relative inline-flex items-center justify-center text-sm font-bold text-[#03060a] bg-emerald-400 rounded-xl px-5 py-2.5 overflow-hidden hover:scale-105 transition-all shadow-[0_0_20px_rgba(52,211,153,0.3)] hover:shadow-[0_0_30px_rgba(52,211,153,0.5)]">
-              {t('nav_register')} <Sparkles className="w-4 h-4 ml-2" />
-            </Link>
+            {isAuthenticated ? (
+              <Link href="/home" className="hidden md:inline-flex group relative items-center justify-center text-sm font-bold text-[#03060a] bg-emerald-400 rounded-xl px-5 py-2.5 overflow-hidden hover:scale-105 transition-all shadow-[0_0_20px_rgba(52,211,153,0.3)] hover:shadow-[0_0_30px_rgba(52,211,153,0.5)]">
+                Vào PitchGrid <Sparkles className="w-4 h-4 ml-2" />
+              </Link>
+            ) : (
+              <>
+                <Link href="/login" className="hidden md:inline-flex text-sm font-semibold text-gray-300 hover:text-white px-4 py-2">{t('nav_login')}</Link>
+                <Link href="/register" className="hidden md:inline-flex group relative items-center justify-center text-sm font-bold text-[#03060a] bg-emerald-400 rounded-xl px-5 py-2.5 overflow-hidden hover:scale-105 transition-all shadow-[0_0_20px_rgba(52,211,153,0.3)] hover:shadow-[0_0_30px_rgba(52,211,153,0.5)]">
+                  {t('nav_register')} <Sparkles className="w-4 h-4 ml-2" />
+                </Link>
+              </>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -181,12 +223,20 @@ export default function LandingPage() {
                 </div>
               </div>
 
-              <Link href="/login" className="w-full py-3 text-center rounded-xl bg-white/5 border border-white/10 text-white font-bold hover:bg-white/10">
-                {t('nav_login')}
-              </Link>
-              <Link href="/register" className="w-full py-3 text-center rounded-xl bg-emerald-500 text-[#03060a] font-black shadow-[0_0_20px_rgba(52,211,153,0.3)]">
-                {t('nav_register_now')}
-              </Link>
+              {isAuthenticated ? (
+                <Link href="/home" className="w-full py-3 text-center rounded-xl bg-emerald-500 text-[#03060a] font-black shadow-[0_0_20px_rgba(52,211,153,0.3)] hover:bg-emerald-400">
+                  Vào PitchGrid
+                </Link>
+              ) : (
+                <>
+                  <Link href="/login" className="w-full py-3 text-center rounded-xl bg-white/5 border border-white/10 text-white font-bold hover:bg-white/10">
+                    {t('nav_login')}
+                  </Link>
+                  <Link href="/register" className="w-full py-3 text-center rounded-xl bg-emerald-500 text-[#03060a] font-black shadow-[0_0_20px_rgba(52,211,153,0.3)] hover:bg-emerald-400">
+                    {t('nav_register_now')}
+                  </Link>
+                </>
+              )}
             </div>
           </motion.div>
         )}
@@ -239,25 +289,25 @@ export default function LandingPage() {
             <motion.div style={{ y: yHero1 }} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 w-[300px] h-[400px] rounded-[2rem] overflow-hidden border border-white/10 shadow-2xl shadow-emerald-500/20 rotate-[-5deg]">
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent z-10" />
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={IMAGES[0]} alt="Fan" className="w-full h-full object-cover" />
+              <img src={HERO_CENTER_IMG} alt="Fan" className="w-full h-full object-cover" />
               <div className="absolute bottom-6 left-6 right-6 z-20">
                 <div className="bg-white/10 backdrop-blur-md rounded-xl p-4 border border-white/20">
-                  <div className="flex justify-between text-xs font-bold text-emerald-400 mb-2"><span>UCL FINALS</span> <span className="animate-pulse text-red-500">LIVE</span></div>
-                  <div className="text-xl font-black text-white flex justify-between"><span>RMA</span> <span>2-1</span> <span>FCB</span></div>
+                  <div className="flex justify-between text-xs font-bold text-emerald-400 mb-2"><span>WC FINALS</span> <span className="animate-pulse text-red-500">LIVE</span></div>
+                  <div className="text-xl font-black text-white flex justify-between"><span>FRA</span> <span>3-3</span> <span>ARG</span></div>
                 </div>
               </div>
             </motion.div>
 
             {/* Back Right Image */}
-            <motion.div style={{ y: yHero2 }} className="absolute top-10 right-0 z-10 w-[250px] h-[320px] rounded-[2rem] overflow-hidden border border-white/5 opacity-80 rotate-[10deg] blur-[1px]">
+            <motion.div style={{ y: yHero2 }} className="absolute top-10 right-0 z-10 w-[250px] h-[320px] rounded-[2rem] overflow-hidden border border-white/5 opacity-60 rotate-[10deg]">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={IMAGES[1]} alt="Fan 2" className="w-full h-full object-cover mix-blend-luminosity" />
+              <img src={HERO_RIGHT_IMG} alt="Fan 2" className="w-full h-full object-cover mix-blend-luminosity" />
             </motion.div>
 
             {/* Front Left Image */}
             <motion.div style={{ y: yHero3 }} className="absolute bottom-10 left-0 z-30 w-[240px] h-[240px] rounded-[2rem] overflow-hidden border border-emerald-500/30 shadow-2xl rotate-[8deg]">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={IMAGES[2]} alt="Fan 3" className="w-full h-full object-cover" />
+              <img src={HERO_LEFT_IMG} alt="Fan 3" className="w-full h-full object-cover" />
               <div className="absolute inset-0 bg-gradient-to-tr from-emerald-500/40 to-transparent mix-blend-overlay" />
             </motion.div>
           </div>
@@ -266,10 +316,10 @@ export default function LandingPage() {
       </section>
 
       {/* ── 2. PINNED HORIZONTAL SCROLL GALLERY ── */}
-      <section id="gallery" ref={horizontalRef} className="relative z-10 h-[1000vh] bg-[#03060a]">
+      <section id="gallery" ref={horizontalRef} className="relative z-10 h-[1000vh] bg-[#03060a] mt-10">
         <div className="sticky top-0 h-screen flex flex-col justify-center overflow-hidden">
 
-          <div className="text-center mb-10 px-6">
+          <div className="text-center mb-10 px-6 mt-16">
             <h2 className="text-4xl md:text-5xl font-black tracking-tight mb-4">
               {t('gallery_title')} <span className="text-emerald-400 italic">{t('gallery_title_highlight')}</span>
             </h2>
@@ -279,12 +329,12 @@ export default function LandingPage() {
           <div className="flex flex-col gap-6 overflow-visible">
             {/* Row 1: Trượt từ phải sang trái */}
             <motion.div style={{ x: xHorizontalRow1 }} className="flex gap-6 w-fit px-6">
-              {[...IMAGES, ...IMAGES].map((img, idx) => (
-                <div key={`r1-${idx}`} className="w-[70vw] md:w-[45vw] lg:w-[35vw] h-[250px] shrink-0 rounded-[2rem] overflow-hidden relative group shadow-2xl">
+              {[...ROW1_IMAGES, ...ROW1_IMAGES, ...ROW1_IMAGES, ...ROW1_IMAGES].map((img, idx) => (
+                <div key={`r1-${idx}`} className="w-[70vw] md:w-[45vw] lg:w-[35vw] h-[250px] shrink-0 rounded-[2rem] overflow-hidden relative group shadow-2xl hover:-translate-y-4 transition-transform duration-500 ease-out cursor-pointer">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={img}
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 grayscale group-hover:grayscale-0"
+                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                     alt="stadium"
                   />
                   <div className="absolute inset-0 bg-emerald-500/0 group-hover:bg-emerald-500/20 mix-blend-overlay transition-colors duration-700" />
@@ -295,12 +345,12 @@ export default function LandingPage() {
 
             {/* Row 2: Trượt từ trái sang phải */}
             <motion.div style={{ x: xHorizontalRow2 }} className="flex gap-6 w-fit px-6">
-              {[...IMAGES.reverse(), ...IMAGES.reverse()].map((img, idx) => (
-                <div key={`r2-${idx}`} className="w-[70vw] md:w-[45vw] lg:w-[35vw] h-[250px] shrink-0 rounded-[2rem] overflow-hidden relative group shadow-2xl">
+              {[...ROW2_IMAGES, ...ROW2_IMAGES, ...ROW2_IMAGES, ...ROW2_IMAGES].map((img, idx) => (
+                <div key={`r2-${idx}`} className="w-[70vw] md:w-[45vw] lg:w-[35vw] h-[250px] shrink-0 rounded-[2rem] overflow-hidden relative group shadow-2xl hover:-translate-y-4 transition-transform duration-500 ease-out cursor-pointer">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={img}
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 grayscale group-hover:grayscale-0"
+                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                     alt="stadium 2"
                   />
                   <div className="absolute inset-0 bg-blue-500/0 group-hover:bg-blue-500/20 mix-blend-overlay transition-colors duration-700" />
@@ -313,7 +363,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── 3. FEATURES WITH SCROLL REVEAL ── */}
-      <section id="features" className="relative z-10 py-32 px-6 bg-[#03060a]">
+      <section id="features" className="relative z-10 py-48 px-6 bg-[#03060a]">
         <div className="max-w-7xl mx-auto">
           <motion.div style={{ scale: scaleFeature, rotate: rotateFeature }} className="text-center mb-24">
             <h2 className="text-5xl md:text-7xl font-black mb-6 tracking-tight" dangerouslySetInnerHTML={{ __html: `${t('features_title')} <span class="text-emerald-400 italic">${t('features_title_highlight')}</span>` }}></h2>
@@ -342,10 +392,10 @@ export default function LandingPage() {
       </section>
 
       {/* ── 4. PREMIUM SECTION ── */}
-      <section id="premium" className="relative z-10 py-32 px-6">
+      <section id="premium" className="relative z-10 py-48 px-6">
         <div className="absolute inset-0 z-0">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="https://images.unsplash.com/photo-1551280857-2b9bbe5260fc?q=80&w=1600&auto=format&fit=crop" className="w-full h-full object-cover opacity-10 mix-blend-luminosity" alt="premium bg" />
+          <img src="/images/football_stadium_1781146784406.png" className="w-full h-full object-cover opacity-10 mix-blend-luminosity" alt="premium bg" />
           <div className="absolute inset-0 bg-gradient-to-b from-[#03060a] via-[#03060a]/80 to-[#03060a]" />
         </div>
 
@@ -388,7 +438,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── 5. FAQ / SUPPORT SECTION ── */}
-      <section id="faq" className="relative z-10 py-32 px-6 bg-[#03060a]">
+      <section id="faq" className="relative z-10 py-48 px-6 bg-[#03060a]">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-black mb-4 tracking-tight">{t('faq_title')} <span className="text-emerald-400">{t('faq_title_highlight')}</span></h2>
@@ -412,7 +462,7 @@ export default function LandingPage() {
           <div className="mt-12 text-center bg-emerald-500/10 border border-emerald-500/20 rounded-2xl p-8 backdrop-blur-md">
             <h4 className="text-2xl font-bold text-emerald-400 mb-2">{t('faq_support_title')}</h4>
             <p className="text-gray-400 mb-6">{t('faq_support_desc')}</p>
-            <button className="px-8 py-3 bg-white/10 hover:bg-white/20 text-white font-semibold rounded-xl transition-colors">{t('faq_support_btn')}</button>
+             <a href="mailto:medschedule2026@gmail.com"><button className="px-8 py-3 bg-white/10 hover:bg-white/20 text-white font-semibold rounded-xl transition-colors">{t('faq_support_btn')}</button></a>
           </div>
         </div>
       </section>
@@ -423,7 +473,7 @@ export default function LandingPage() {
           {/* Background khổng lồ */}
           <div className="absolute inset-0">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={IMAGES[5]} className="w-full h-full object-cover opacity-30" alt="stadium bg" />
+            <img src={CTA_BG_IMG} className="w-full h-full object-cover opacity-30" alt="stadium bg" />
             <div className="absolute inset-0 bg-gradient-to-t from-[#03060a] via-[#03060a]/60 to-[#03060a]" />
           </div>
 
@@ -462,7 +512,10 @@ export default function LandingPage() {
           </div>
 
           {/* Links (Phải) */}
-          <div className="flex gap-6 text-sm">
+          <div className="flex flex-wrap items-center justify-end gap-6 text-sm">
+            <a href="mailto:medschedule2026@gmail.com" className="flex items-center gap-1 text-emerald-400 hover:text-emerald-300 font-semibold transition-colors">
+              <MessageSquare className="w-4 h-4" /> Liên hệ CSKH
+            </a>
             <button onClick={() => setPopupContent('terms')} className="hover:text-emerald-400 transition-colors">Điều khoản Dịch vụ</button>
             <button onClick={() => setPopupContent('privacy')} className="hover:text-emerald-400 transition-colors">Chính sách Bảo mật</button>
           </div>

@@ -33,13 +33,14 @@ const FLAG_MAP: Record<string, string> = {
   'Nigeria': '🇳🇬', 'Senegal': '🇸🇳', 'Egypt': '🇪🇬',
 };
 
-type Step = 'username' | 'teams';
+type Step = 'terms' | 'username' | 'teams';
 
 export default function OnboardingPage() {
   const router = useRouter();
   const { user, setAuth } = useAuthStore();
 
-  const [step, setStep] = useState<Step>('username');
+  const [step, setStep] = useState<Step>('terms');
+  const [termsAccepted, setTermsAccepted] = useState(false);
   const [username, setUsername] = useState(user?.username || '');
   const [selectedClubs, setSelectedClubs] = useState<string[]>([]);
   const [selectedNational, setSelectedNational] = useState<string[]>([]);
@@ -68,12 +69,11 @@ export default function OnboardingPage() {
         favoriteClubs: selectedClubs,
         favoriteNationalTeams: selectedNational,
       });
-      if (data.error) { setError(data.error); return; }
+      if (data.error) { setError(data.error); setLoading(false); return; }
       setAuth(data.user, data.access_token);
       router.push('/home');
     } catch {
       setError('Đã có lỗi, vui lòng thử lại');
-    } finally {
       setLoading(false);
     }
   };
@@ -99,27 +99,78 @@ export default function OnboardingPage() {
 
           {/* Progress */}
           <div className="flex items-center justify-center gap-2 mb-6">
-            {(['username', 'teams'] as Step[]).map((s, i) => (
+            {(['terms', 'username', 'teams'] as Step[]).map((s, i) => (
               <div key={s} className="flex items-center gap-2">
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all ${
                   step === s ? 'bg-emerald-500 text-white' :
-                  (step === 'teams' && s === 'username') ? 'bg-emerald-500/30 text-emerald-400' :
+                  (['username', 'teams'].includes(step) && s === 'terms') || (step === 'teams' && s === 'username') ? 'bg-emerald-500/30 text-emerald-400' :
                   'bg-white/10 text-gray-500'
                 }`}>{i + 1}</div>
-                {i < 1 && <div className={`w-12 h-0.5 ${step === 'teams' ? 'bg-emerald-500' : 'bg-white/10'} transition-all`} />}
+                {i < 2 && <div className={`w-8 sm:w-12 h-0.5 ${(['username', 'teams'].includes(step) && s === 'terms') || (step === 'teams' && s === 'username') ? 'bg-emerald-500' : 'bg-white/10'} transition-all`} />}
               </div>
             ))}
           </div>
 
           <h1 className="text-2xl font-bold mb-2">
-            {step === 'username' ? 'Đặt username của bạn 👋' : 'Chọn đội bóng yêu thích ⚽'}
+            {step === 'terms' ? 'Điều khoản & Chính sách 📜' : step === 'username' ? 'Đặt username của bạn 👋' : 'Chọn đội bóng yêu thích ⚽'}
           </h1>
           <p className="text-gray-400">
-            {step === 'username'
+            {step === 'terms'
+              ? 'Vui lòng đọc kỹ và đồng ý với các quy định để tham gia cộng đồng'
+              : step === 'username'
               ? 'Username là tên hiển thị của bạn trong cộng đồng PitchGrid'
               : 'Chọn ít nhất 1 đội bóng - có thể là đội tuyển, câu lạc bộ, hoặc cả hai!'}
           </p>
         </div>
+
+        {/* Step 0: Terms */}
+        {step === 'terms' && (
+          <div className="bg-white/[0.04] border border-white/[0.08] rounded-2xl p-6 sm:p-8">
+            <div className="bg-black/30 border border-white/5 rounded-xl p-4 h-64 overflow-y-auto mb-6 text-sm text-gray-300 space-y-4">
+              <h3 className="text-white font-bold text-base sticky top-0 bg-[#080d14] pb-2 z-10 pt-1 -mt-1">Điều khoản Dịch vụ của PitchGrid</h3>
+              <p>Chào mừng bạn đến với PitchGrid - Mạng xã hội dành riêng cho người hâm mộ bóng đá.</p>
+              
+              <h4 className="text-emerald-400 font-semibold mt-4">1. Quy tắc ứng xử cộng đồng</h4>
+              <ul className="list-disc pl-5 space-y-1">
+                <li>Tôn trọng người hâm mộ của các đội bóng khác.</li>
+                <li>Không sử dụng ngôn từ kích động, thù địch, phân biệt chủng tộc hoặc lăng mạ.</li>
+                <li>Mọi hành vi spam, lừa đảo hoặc đăng tải nội dung không liên quan đến bóng đá sẽ bị khóa tài khoản ngay lập tức.</li>
+              </ul>
+
+              <h4 className="text-emerald-400 font-semibold mt-4">2. Quyền sở hữu nội dung</h4>
+              <p>Bạn giữ toàn quyền sở hữu đối với nội dung bạn đăng tải. Tuy nhiên, bằng việc đăng tải, bạn cấp cho PitchGrid quyền hiển thị và phân phối nội dung đó trên nền tảng.</p>
+
+              <h4 className="text-emerald-400 font-semibold mt-4">3. Quyền riêng tư (Privacy Policy)</h4>
+              <p>Chúng tôi cam kết bảo mật thông tin cá nhân của bạn. PitchGrid không bán dữ liệu của bạn cho bên thứ ba. Dữ liệu của bạn được sử dụng hoàn toàn để tối ưu hóa trải nghiệm bảng tin và gợi ý kết nối.</p>
+            </div>
+
+            <label className="flex items-start gap-3 cursor-pointer group mb-6">
+              <div className="relative flex items-center justify-center mt-0.5">
+                <input 
+                  type="checkbox" 
+                  checked={termsAccepted}
+                  onChange={(e) => setTermsAccepted(e.target.checked)}
+                  className="peer appearance-none w-5 h-5 rounded border-2 border-gray-500 bg-transparent checked:border-emerald-500 checked:bg-emerald-500 transition-all cursor-pointer"
+                />
+                <svg className="absolute w-3.5 h-3.5 text-white opacity-0 peer-checked:opacity-100 pointer-events-none transition-opacity" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+              </div>
+              <span className="text-sm text-gray-400 group-hover:text-gray-300 transition-colors select-none">
+                Tôi đã đọc và đồng ý với các <strong>Điều khoản Dịch vụ</strong> và <strong>Chính sách Bảo mật</strong> của PitchGrid.
+              </span>
+            </label>
+
+            <button
+              id="btn-onboarding-terms-next"
+              onClick={() => setStep('username')}
+              disabled={!termsAccepted}
+              className="w-full bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-white font-semibold py-3 rounded-xl transition-all shadow-lg shadow-emerald-500/25 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Đồng ý & Tiếp tục →
+            </button>
+          </div>
+        )}
 
         {/* Step 1: Username */}
         {step === 'username' && (
@@ -142,17 +193,25 @@ export default function OnboardingPage() {
               <div className="mt-4 text-red-400 text-sm bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3">⚠️ {error}</div>
             )}
 
-            <button
-              id="btn-onboarding-next"
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => setStep('terms')}
+                className="flex-1 bg-white/[0.06] hover:bg-white/10 text-gray-300 font-medium py-3 rounded-xl transition-all border border-white/10"
+              >
+                ← Quay lại
+              </button>
+              <button
+                id="btn-onboarding-next"
               onClick={() => {
                 if (username.length < 3) { setError('Username phải có ít nhất 3 ký tự'); return; }
                 setError('');
                 setStep('teams');
               }}
-              className="w-full mt-6 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-white font-semibold py-3 rounded-xl transition-all shadow-lg shadow-emerald-500/25"
+              className="flex-[2] bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-white font-semibold py-3 rounded-xl transition-all shadow-lg shadow-emerald-500/25"
             >
               Tiếp theo →
             </button>
+            </div>
           </div>
         )}
 

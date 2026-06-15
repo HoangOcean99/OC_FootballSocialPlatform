@@ -5,13 +5,14 @@ import { useAuthStore } from '@/store/useAuthStore';
 
 export default function AuthGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  const { isAuthenticated, user } = useAuthStore();
+  const { isAuthenticated, user, clearAuth } = useAuthStore();
   const [checking, setChecking] = useState(true);
 
   useEffect(() => {
     // Give Zustand time to rehydrate from localStorage
     const timer = setTimeout(() => {
       if (!isAuthenticated) {
+        clearAuth(); // Sync: if client says not logged in, clear any lingering cookies
         router.replace('/');
       } else if (user && !user.onboardingCompleted) {
         router.replace('/onboarding');

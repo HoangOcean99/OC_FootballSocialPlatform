@@ -1,6 +1,7 @@
 'use client';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import Cookies from 'js-cookie';
 
 interface User {
   id: string;
@@ -12,6 +13,7 @@ interface User {
   favoriteClubs: string[];
   favoriteNationalTeams: string[];
   onboardingCompleted: boolean;
+  tier: 'REGULAR' | 'PLUS';
 }
 
 interface AuthState {
@@ -31,10 +33,12 @@ export const useAuthStore = create<AuthState>()(
       isAuthenticated: false,
       setAuth: (user, token) => {
         localStorage.setItem('footballverse_token', token);
+        Cookies.set('footballverse_token', token, { expires: 7, path: '/' });
         set({ user, token, isAuthenticated: true });
       },
       clearAuth: () => {
         localStorage.removeItem('footballverse_token');
+        Cookies.remove('footballverse_token', { path: '/' });
         set({ user: null, token: null, isAuthenticated: false });
       },
       updateUser: (partial) =>

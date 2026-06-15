@@ -1,12 +1,10 @@
 'use client';
 
-import { useState } from 'react';
-import { USER_PROFILE, Achievement, UserActivity } from '@/lib/mockData';
+import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { useAuthStore } from '@/store/useAuthStore';
-
-const u = USER_PROFILE;
-const xpPercent = Math.round((u.xp / u.xpToNextLevel) * 100);
+import { fetchUserProfile } from '@/lib/api';
+import { UserProfile, Achievement, UserActivity } from '@football-fan/shared-types';
 
 const rarityStyles: Record<Achievement['rarity'], string> = {
   common: 'border-gray-600/50 bg-gray-800/40 text-gray-300',
@@ -35,8 +33,49 @@ export default function ProfilePage() {
   const t = useTranslations('Profile');
   const [journalOpen, setJournalOpen] = useState<string | null>(null);
   const { user } = useAuthStore();
-  
-  const displayInitials = user?.username ? user.username.slice(0, 2).toUpperCase() : u.initials;
+  const [u, setU] = useState<UserProfile | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    // For demo purposes, we fetch 'HoangOcean' if user is not available or hardcoded
+    const usernameToFetch = user?.username || 'HoangOcean';
+    fetchUserProfile(usernameToFetch)
+      .then(data => {
+        if (!data) setError('User not found');
+        else setU(data);
+      })
+      .catch(err => {
+        console.error(err);
+        setError('Failed to load profile: ' + err.message);
+      });
+  }, [user]);
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-[#080d14] text-white flex flex-col items-center justify-center gap-4">
+        <div className="text-red-400 font-bold">{error}</div>
+        <p className="text-gray-400 text-sm text-center max-w-sm">
+          Có thể tài khoản của bạn đã bị xóa khỏi cơ sở dữ liệu do việc reset/seed lại dữ liệu. Hãy đăng xuất và đăng nhập lại.
+        </p>
+        <button
+          onClick={() => {
+            useAuthStore.getState().logout();
+            window.location.href = '/';
+          }}
+          className="px-6 py-2 bg-white/[0.08] hover:bg-white/[0.12] border border-white/[0.15] rounded-xl transition"
+        >
+          Đăng xuất
+        </button>
+      </div>
+    );
+  }
+
+  if (!u) {
+    return <div className="min-h-screen bg-[#080d14] text-white flex items-center justify-center">Đang tải...</div>;
+  }
+
+  const xpPercent = Math.round(((u.xp || 0) / (u.xpToNextLevel || 1000)) * 100) || 0;
+  const displayInitials = user?.username ? user.username.slice(0, 2).toUpperCase() : (u.initials || u.username?.slice(0, 2).toUpperCase() || 'FV');
   const displayName = user?.username || u.displayName;
   const displayUsername = user?.username || u.username;
 
@@ -85,7 +124,7 @@ export default function ProfilePage() {
             <div className="relative">
               <div className="w-28 h-28 rounded-2xl bg-gradient-to-br from-emerald-400 to-green-600 ring-4 ring-emerald-500/50 ring-offset-4 ring-offset-[#080d14] flex items-center justify-center shadow-2xl shadow-emerald-500/30 overflow-hidden">
                 {user?.avatarUrl ? (
-                  <img src={user.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+                  <img src={user.avatarUrl} alt="Avatar" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                 ) : (
                   <span className="text-4xl font-black text-white">{displayInitials}</span>
                 )}
@@ -96,22 +135,35 @@ export default function ProfilePage() {
 
             {/* Name & badge */}
             <div className="flex-1 pb-1">
-              <div className="flex flex-wrap items-center gap-2 mb-1">
-                <h1 className="text-2xl font-black text-white">{displayName}</h1>
+              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mb-2">
+                <h1 className="text-2xl sm:text-3xl font-black text-white">{displayName}</h1>
+                {u.role === 'ADMIN' && (
+                  <span className="text-xs px-2.5 py-0.5 bg-rose-500/20 border border-rose-500/30 text-rose-400 font-bold rounded-full">
+                    ADMIN
+                  </span>
+                )}
                 <span className="text-xs px-2.5 py-0.5 bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 rounded-full font-semibold">
-                  Lv.{u.level}
+                  Lv.{u.level || 1}
                 </span>
                 <span className="text-xs px-2.5 py-0.5 bg-amber-500/20 border border-amber-500/30 text-amber-300 rounded-full">
-                  {u.levelName}
+                  {u.levelName || 'Người mới'}
                 </span>
+                <span className="text-xs px-2.5 py-0.5 bg-purple-500/20 border border-purple-500/30 text-purple-300 rounded-full">
+                  {u.levelTitle || 'Chuyên gia'}
+                </span>
+                {u.tier === 'PLUS' && (
+                  <span className="text-xs px-2.5 py-0.5 bg-gradient-to-r from-amber-400 to-orange-500 text-black font-black rounded-full uppercase tracking-wider">
+                    PLUS
+                  </span>
+                )}
               </div>
-              <p className="text-gray-400 text-sm">@{displayUsername} · {t('joined', { date: u.joinDate })}</p>
+              <p className="text-gray-400 text-sm">@{displayUsername} · {t('joined', { date: u.joinDate || 'Tháng này' })}</p>
 
               {/* XP Bar */}
               <div className="mt-3 max-w-xs">
                 <div className="flex justify-between text-xs mb-1.5">
-                  <span className="text-gray-400">XP: <span className="text-emerald-400 font-semibold">{u.xp.toLocaleString()}</span></span>
-                  <span className="text-gray-500">{u.xpToNextLevel.toLocaleString()} XP → Lv.{u.level + 1}</span>
+                  <span className="text-gray-400">XP: <span className="text-emerald-400 font-semibold">{(u.xp || 0).toLocaleString()}</span></span>
+                  <span className="text-gray-500">{(u.xpToNextLevel || 1000).toLocaleString()} XP → Lv.{(u.level || 1) + 1}</span>
                 </div>
                 <div className="h-2 bg-white/[0.06] rounded-full overflow-hidden">
                   <div
@@ -129,10 +181,10 @@ export default function ProfilePage() {
           {/* ── Stats row ── */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
             {[
-              { label: t('stat_posts'), value: u.stats.posts, icon: '📝', color: 'text-purple-400' },
-              { label: t('stat_comments'), value: u.stats.comments, icon: '💬', color: 'text-blue-400' },
-              { label: t('stat_correct_preds'), value: u.stats.correctPredictions, icon: '🎯', color: 'text-emerald-400' },
-              { label: t('stat_matches_watched'), value: u.stats.matchesWatched, icon: '📺', color: 'text-amber-400' },
+              { label: t('stat_posts'), value: u.stats?.posts || 0, icon: '📝', color: 'text-purple-400' },
+              { label: t('stat_comments'), value: u.stats?.comments || 0, icon: '💬', color: 'text-blue-400' },
+              { label: t('stat_correct_preds'), value: u.stats?.correctPredictions || 0, icon: '🎯', color: 'text-emerald-400' },
+              { label: t('stat_matches_watched'), value: u.stats?.matchesWatched || 0, icon: '📺', color: 'text-amber-400' },
             ].map((s) => (
               <div key={s.label} className="bg-white/[0.04] border border-white/[0.08] rounded-xl p-4 text-center hover:border-white/[0.15] transition-colors">
                 <span className="text-2xl block mb-1">{s.icon}</span>
@@ -155,11 +207,11 @@ export default function ProfilePage() {
                 <h2 className="text-base font-bold text-white mb-4 flex items-center gap-2">
                   <span>{t('achievements')}</span>
                   <span className="ml-auto text-xs text-gray-500">
-                    {t('achievements_unlocked', { count: u.achievements.filter((a) => a.unlocked).length, total: u.achievements.length })}
+                    {t('achievements_unlocked', { count: (u.achievements || []).filter((a) => a.unlocked).length, total: (u.achievements || []).length })}
                   </span>
                 </h2>
                 <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
-                  {u.achievements.map((a) => (
+                  {(u.achievements || []).map((a) => (
                     <div
                       key={a.id}
                       title={`${a.name}: ${a.description}`}
@@ -190,7 +242,23 @@ export default function ProfilePage() {
                   <span>{t('fav_teams')}</span>
                 </h2>
                 <div className="flex flex-wrap gap-2">
-                  {u.favoriteTeams.map((team) => (
+                  {(u.favoriteClubs || []).map((team) => (
+                    <span
+                      key={team}
+                      className="px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-sm rounded-full font-medium hover:bg-emerald-500/20 transition cursor-pointer"
+                    >
+                      {team}
+                    </span>
+                  ))}
+                  {(u.favoriteNationalTeams || []).map((team) => (
+                    <span
+                      key={team}
+                      className="px-3 py-1.5 bg-blue-500/10 border border-blue-500/30 text-blue-300 text-sm rounded-full font-medium hover:bg-blue-500/20 transition cursor-pointer"
+                    >
+                      {team}
+                    </span>
+                  ))}
+                  {(!u.favoriteClubs?.length && !u.favoriteNationalTeams?.length) && (u.favoriteTeams || []).map((team) => (
                     <span
                       key={team}
                       className="px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-sm rounded-full font-medium hover:bg-emerald-500/20 transition cursor-pointer"
@@ -214,7 +282,7 @@ export default function ProfilePage() {
                   {/* Timeline line */}
                   <div className="absolute left-[17px] top-0 bottom-0 w-px bg-white/[0.06]" />
 
-                  {u.journal.map((day, i) => (
+                  {(u.journal || []).map((day, i) => (
                     <div key={day.date} className="relative flex gap-4 pb-5 last:pb-0">
                       {/* Dot */}
                       <div className={`relative z-10 flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold border ${i === 0
@@ -284,7 +352,7 @@ export default function ProfilePage() {
                         cx="18" cy="18" r="15.9" fill="none"
                         stroke="url(#grad)"
                         strokeWidth="3"
-                        strokeDasharray={`${u.predictionStats.accuracy} ${100 - u.predictionStats.accuracy}`}
+                        strokeDasharray={`${u.predictionStats?.accuracy || 0} ${100 - (u.predictionStats?.accuracy || 0)}`}
                         strokeLinecap="round"
                       />
                       <defs>
@@ -295,7 +363,7 @@ export default function ProfilePage() {
                       </defs>
                     </svg>
                     <div className="absolute inset-0 flex flex-col items-center justify-center">
-                      <span className="text-xl font-black text-emerald-400">{u.predictionStats.accuracy}%</span>
+                      <span className="text-xl font-black text-emerald-400">{u.predictionStats?.accuracy || 0}%</span>
                       <span className="text-[9px] text-gray-500">{t('accuracy')}</span>
                     </div>
                   </div>
@@ -303,19 +371,19 @@ export default function ProfilePage() {
                   <div className="flex flex-col gap-2 text-sm">
                     <div className="flex justify-between gap-4">
                       <span className="text-gray-400">{t('pred_total')}</span>
-                      <span className="text-white font-semibold">{u.predictionStats.total}</span>
+                      <span className="text-white font-semibold">{u.predictionStats?.total || 0}</span>
                     </div>
                     <div className="flex justify-between gap-4">
                       <span className="text-gray-400">{t('pred_correct')}</span>
-                      <span className="text-emerald-400 font-semibold">{u.predictionStats.correct}</span>
+                      <span className="text-emerald-400 font-semibold">{u.predictionStats?.correct || 0}</span>
                     </div>
                     <div className="flex justify-between gap-4">
                       <span className="text-gray-400">{t('pred_streak')}</span>
-                      <span className="text-amber-400 font-semibold">🔥 {u.predictionStats.streak}</span>
+                      <span className="text-amber-400 font-semibold">🔥 {u.predictionStats?.streak || 0}</span>
                     </div>
                     <div className="flex justify-between gap-4">
                       <span className="text-gray-400">{t('pred_best_streak')}</span>
-                      <span className="text-purple-400 font-semibold">{u.predictionStats.bestStreak}</span>
+                      <span className="text-purple-400 font-semibold">{u.predictionStats?.bestStreak || 0}</span>
                     </div>
                   </div>
                 </div>
@@ -323,7 +391,7 @@ export default function ProfilePage() {
                 {/* XP from predictions */}
                 <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl flex items-center justify-between">
                   <span className="text-sm text-gray-400">{t('xp_from_preds')}</span>
-                  <span className="text-emerald-400 font-bold text-sm">+{u.predictionStats.xpEarned.toLocaleString()} XP</span>
+                  <span className="text-emerald-400 font-bold text-sm">+{(u.predictionStats?.xpEarned || 0).toLocaleString()} XP</span>
                 </div>
               </section>
 
@@ -333,7 +401,7 @@ export default function ProfilePage() {
                   <span>{t('recent_activity')}</span>
                 </h2>
                 <div className="flex flex-col gap-3">
-                  {u.recentActivity.map((act) => (
+                  {(u.recentActivity || []).map((act) => (
                     <div key={act.id} className="flex items-start gap-3">
                       <div className={`flex-shrink-0 w-9 h-9 rounded-xl flex items-center justify-center text-base border ${activityColor[act.type]}`}>
                         {activityIcon[act.type]}
@@ -355,15 +423,15 @@ export default function ProfilePage() {
               <section className="bg-white/[0.04] border border-white/[0.08] rounded-2xl p-5">
                 <h2 className="text-base font-bold text-white mb-4 flex items-center gap-2">
                   <span>{t('joined_communities')}</span>
-                  <span className="ml-auto text-xs text-gray-500">{u.joinedCommunities.length}</span>
+                  <span className="ml-auto text-xs text-gray-500">{(u.joinedCommunities || []).length}</span>
                 </h2>
                 <div className="flex flex-col gap-2">
-                  {u.joinedCommunities.map((name, i) => (
+                  {(u.joinedCommunities || []).map((name, i) => (
                     <div
                       key={name}
                       className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-white/[0.04] transition cursor-pointer group"
                     >
-                      <span className="text-xl">{u.communityEmojis[i]}</span>
+                      <span className="text-xl">{(u.communityEmojis || [])[i]}</span>
                       <span className="text-sm text-gray-300 group-hover:text-white transition flex-1">{name}</span>
                       <span className="text-gray-600 group-hover:text-gray-400 transition text-xs">→</span>
                     </div>
