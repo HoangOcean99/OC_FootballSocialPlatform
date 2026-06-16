@@ -85,4 +85,20 @@ export class UsersService implements OnModuleInit, OnModuleDestroy {
       onlineCount: onlineCount,
     };
   }
+
+  async addFavoriteCompetition(userId: string, compName: string) {
+    return this.userModel.findByIdAndUpdate(
+      userId,
+      { $addToSet: { favoriteCompetitions: compName } },
+      { new: true }
+    ).exec();
+  }
+
+  async removeFavoriteCompetition(userId: string, compName: string) {
+    return this.userModel.findByIdAndUpdate(
+      userId,
+      { $pull: { favoriteCompetitions: compName } },
+      { new: true }
+    ).exec();
+  }
 }

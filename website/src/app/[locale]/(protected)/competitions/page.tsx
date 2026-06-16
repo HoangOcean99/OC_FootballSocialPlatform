@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { Trophy, Star, Search } from 'lucide-react';
 import { motion } from 'framer-motion';
+import Link from 'next/link';
 import { fetchAllCompetitions } from '@/lib/api';
 import { Competition } from '@football-fan/shared-types';
 import { useAuthStore } from '@/store/useAuthStore';
@@ -9,7 +10,7 @@ import { useAuthStore } from '@/store/useAuthStore';
 export default function CompetitionsPage() {
   const [competitions, setCompetitions] = useState<Competition[]>([]);
   const [loading, setLoading] = useState(true);
-  const { user } = useAuthStore();
+  const { user, toggleFavoriteCompetition } = useAuthStore();
 
   useEffect(() => {
     fetchAllCompetitions()
@@ -19,8 +20,22 @@ export default function CompetitionsPage() {
   }, []);
 
   const favoriteNames = user?.favoriteCompetitions || [];
-  const following = competitions.filter(c => favoriteNames.includes(c.name));
-  const discover = competitions.filter(c => !favoriteNames.includes(c.name));
+  
+  const order = ['World Cup', 'Euro', 'Copa America', 'Champions League', 'Ngoại hạng Anh', 'La Liga', 'Bundesliga', 'Serie A', 'Ligue 1'];
+  const sortedComps = [...competitions].sort((a, b) => {
+    const idxA = order.indexOf(a.name);
+    const idxB = order.indexOf(b.name);
+    if (idxA === -1 && idxB === -1) return 0;
+    if (idxA === -1) return 1;
+    if (idxB === -1) return -1;
+    return idxA - idxB;
+  });
+
+  const following = sortedComps.filter(c => favoriteNames.includes(c.name));
+  const discover = sortedComps.filter(c => !favoriteNames.includes(c.name));
+  
+  const nationalComps = discover.filter(c => ['World Cup', 'Euro', 'Copa America'].includes(c.name));
+  const clubComps = discover.filter(c => !['World Cup', 'Euro', 'Copa America'].includes(c.name));
 
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-8 pb-20">
@@ -33,14 +48,7 @@ export default function CompetitionsPage() {
           </h1>
           <p className="text-gray-400 text-sm">Theo dõi các giải đấu hàng đầu thế giới</p>
         </div>
-        <div className="relative w-full md:w-64">
-          <input 
-            type="text" 
-            placeholder="Tìm kiếm giải đấu..." 
-            className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-10 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500/50 transition-colors"
-          />
-          <Search className="w-4 h-4 text-gray-500 absolute left-3.5 top-3" />
-        </div>
+
       </div>
 
       {/* Following Grid */}
@@ -52,60 +60,109 @@ export default function CompetitionsPage() {
           ) : following.length === 0 ? (
             <div className="col-span-full text-gray-500 text-sm">Chưa theo dõi giải đấu nào.</div>
           ) : following.map((comp, i) => (
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.1 }}
-              key={comp.id} 
-              className="group relative bg-white/[0.02] border border-white/10 rounded-2xl p-4 overflow-hidden hover:bg-white/[0.04] transition-colors cursor-pointer"
-            >
+            <Link href={`/competitions/${comp.id}`} key={comp.id}>
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.1 }}
+                className="group relative bg-white/[0.02] border border-white/10 rounded-2xl p-4 overflow-hidden hover:bg-white/[0.04] transition-colors cursor-pointer"
+              >
               <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-br ${comp.color || 'from-gray-600 to-gray-800'} opacity-10 blur-3xl rounded-full group-hover:opacity-20 transition-opacity`} />
               <div className="flex items-center gap-4 relative z-10">
-                <div className="w-14 h-14 rounded-xl bg-white/[0.05] border border-white/10 flex items-center justify-center text-2xl shadow-inner">
-                  {comp.logo}
+                <div className="w-14 h-14 rounded-xl bg-white/90 p-1 flex items-center justify-center text-2xl shadow-lg shadow-black/20 group-hover:-translate-y-1 transition-transform duration-300">
+                {comp.logo?.startsWith('http') ? <img src={comp.logo} alt={comp.name} className="w-full h-full object-contain" /> : comp.logo}
                 </div>
                 <div className="flex-1 min-w-0">
                   <h3 className="text-lg font-bold text-white truncate group-hover:text-emerald-400 transition-colors">{comp.name}</h3>
                   <p className="text-sm text-gray-400 truncate">{comp.country}</p>
                 </div>
-                <button className="w-10 h-10 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center hover:bg-emerald-500 hover:text-white transition-colors shrink-0">
+                <button 
+                  onClick={(e) => { e.preventDefault(); toggleFavoriteCompetition(comp.name); }}
+                  className="w-10 h-10 rounded-full bg-emerald-500 text-white flex items-center justify-center hover:bg-red-500 transition-colors shrink-0"
+                  title="Hủy theo dõi"
+                >
                   <Star className="w-5 h-5 fill-current" />
                 </button>
               </div>
-            </motion.div>
+              </motion.div>
+            </Link>
           ))}
         </div>
       </div>
 
       {/* Discover Grid */}
       <div>
-        <h2 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-4 mt-8">Khám phá</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {loading ? (
-            <div className="col-span-full text-center text-gray-400 py-4">Đang tải...</div>
-          ) : discover.map((comp, i) => (
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.1 + 0.2 }}
-              key={comp.id} 
-              className="group relative bg-white/[0.02] border border-white/10 rounded-2xl p-4 overflow-hidden hover:bg-white/[0.04] transition-colors cursor-pointer"
-            >
-              <div className="flex items-center gap-4 relative z-10">
-                <div className="w-14 h-14 rounded-xl bg-white/[0.05] border border-white/10 flex items-center justify-center text-2xl shadow-inner grayscale opacity-50 group-hover:grayscale-0 group-hover:opacity-100 transition-all">
-                  {comp.logo}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="text-lg font-bold text-gray-300 truncate group-hover:text-white transition-colors">{comp.name}</h3>
-                  <p className="text-xs text-gray-500 truncate">{comp.followers || '1M'} người theo dõi</p>
-                </div>
-                <button className="px-4 py-2 rounded-lg bg-white/[0.05] border border-white/10 text-gray-300 text-sm font-bold hover:bg-emerald-500 hover:text-white hover:border-emerald-500 transition-colors shrink-0">
-                  Theo dõi
-                </button>
-              </div>
-            </motion.div>
-          ))}
-        </div>
+        {nationalComps.length > 0 && (
+          <>
+            <h2 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-4 mt-8">Cấp Đội Tuyển Quốc Gia</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {loading ? (
+                <div className="col-span-full text-center text-gray-400 py-4">Đang tải...</div>
+              ) : nationalComps.map((comp, i) => (
+                <Link href={`/competitions/${comp.id}`} key={comp.id}>
+                  <motion.div 
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: i * 0.1 + 0.2 }}
+                    className="group relative bg-white/[0.02] border border-white/10 rounded-2xl p-4 overflow-hidden hover:bg-white/[0.04] transition-colors cursor-pointer"
+                  >
+                  <div className="flex items-center gap-4 relative z-10">
+                    <div className="w-14 h-14 rounded-xl bg-white/90 p-1 flex items-center justify-center text-2xl shadow-lg shadow-black/20 group-hover:-translate-y-1 transition-transform duration-300">
+                      {comp.logo?.startsWith('http') ? <img src={comp.logo} alt={comp.name} className="w-full h-full object-contain" /> : comp.logo}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-lg font-bold text-gray-300 truncate group-hover:text-white transition-colors">{comp.name}</h3>
+                      <p className="text-xs text-gray-500 truncate">{comp.followers || '1M'} người theo dõi</p>
+                    </div>
+                    <button 
+                      onClick={(e) => { e.preventDefault(); toggleFavoriteCompetition(comp.name); }}
+                      className="px-4 py-2 rounded-lg bg-white/[0.05] border border-white/10 text-gray-300 text-sm font-bold hover:bg-emerald-500 hover:text-white hover:border-emerald-500 transition-colors shrink-0"
+                    >
+                      Theo dõi
+                    </button>
+                  </div>
+                  </motion.div>
+                </Link>
+              ))}
+            </div>
+          </>
+        )}
+
+        {clubComps.length > 0 && (
+          <>
+            <h2 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-4 mt-12">Cấp Câu Lạc Bộ</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {loading ? (
+                <div className="col-span-full text-center text-gray-400 py-4">Đang tải...</div>
+              ) : clubComps.map((comp, i) => (
+                <Link href={`/competitions/${comp.id}`} key={comp.id}>
+                  <motion.div 
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: i * 0.1 + 0.2 }}
+                    className="group relative bg-white/[0.02] border border-white/10 rounded-2xl p-4 overflow-hidden hover:bg-white/[0.04] transition-colors cursor-pointer"
+                  >
+                  <div className="flex items-center gap-4 relative z-10">
+                    <div className="w-14 h-14 rounded-xl bg-white/90 p-1 flex items-center justify-center text-2xl shadow-lg shadow-black/20 group-hover:-translate-y-1 transition-transform duration-300">
+                      {comp.logo?.startsWith('http') ? <img src={comp.logo} alt={comp.name} className="w-full h-full object-contain" /> : comp.logo}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-lg font-bold text-gray-300 truncate group-hover:text-white transition-colors">{comp.name}</h3>
+                      <p className="text-xs text-gray-500 truncate">{comp.followers || '1M'} người theo dõi</p>
+                    </div>
+                    <button 
+                      onClick={(e) => { e.preventDefault(); toggleFavoriteCompetition(comp.name); }}
+                      className="px-4 py-2 rounded-lg bg-white/[0.05] border border-white/10 text-gray-300 text-sm font-bold hover:bg-emerald-500 hover:text-white hover:border-emerald-500 transition-colors shrink-0"
+                    >
+                      Theo dõi
+                    </button>
+                  </div>
+                  </motion.div>
+                </Link>
+              ))}
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

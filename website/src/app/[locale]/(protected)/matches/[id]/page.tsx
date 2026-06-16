@@ -228,8 +228,8 @@ export default function MatchDetailsPage() {
               </div>
 
               {/* Event Content */}
-              <div className={`w-[calc(50%-2.5rem)] p-4 rounded-xl border ${cardBg} ${isHome ? 'ml-auto text-left' : 'mr-auto text-right md:text-left'} md:text-left shadow-lg backdrop-blur-sm transition hover:scale-[1.02]`}>
-                <div className="flex items-center gap-3 mb-1">
+              <div className={`w-[calc(50%-2.5rem)] p-4 rounded-xl border ${cardBg} ${isHome ? 'mr-auto text-right' : 'ml-auto text-left'} shadow-lg backdrop-blur-sm transition hover:scale-[1.02]`}>
+                <div className={`flex items-center gap-3 mb-1 ${isHome ? 'justify-end' : 'justify-start'}`}>
                   <span className={`font-black text-lg ${textColor}`}>{event.clock?.displayValue}</span>
                   <span className={`text-xs font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${isGoal ? 'bg-emerald-500/20' : 'bg-white/5'} ${textColor}`}>
                     {displayTypeLabel}

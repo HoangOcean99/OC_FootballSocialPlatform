@@ -93,3 +93,20 @@ export const fetchMatchDetails = async (id: string, lang?: string) => {
   const { data } = await api.get(url);
   return data;
 };
+
+export const fetchCompetitionDetails = async (id: string) => {
+  const { data } = await api.get(`/competitions/${id}`);
+  return data;
+};
+
+export const fetchCompetitionStandings = async (id: string, season?: string) => {
+  const url = season ? `/competitions/${id}/standings?season=${season}` : `/competitions/${id}/standings`;
+  const { data } = await api.get(url);
+  return data;
+};
+
+export const fetchCompetitionMatches = async (id: string, season?: string) => {
+  const url = season ? `/competitions/${id}/matches?season=${season}` : `/competitions/${id}/matches`;
+  const { data } = await api.get(url);
+  return data;
+};

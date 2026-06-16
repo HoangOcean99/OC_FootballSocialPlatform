@@ -50,6 +50,7 @@ export interface Match {
   stadium?: string;
   round?: string;
   status: 'SCHEDULED' | 'LIVE' | 'HT' | 'FINISHED' | 'POSTPONED';
+  note?: string;
 }
 
 export interface PostAuthor {
@@ -170,4 +171,24 @@ export interface PredMatch {
   competition: string;
   kickoff: string;
   xpReward: number;
+}
+
+export interface StandingEntry {
+  rank: number;
+  team: {
+    id: string;
+    name: string;
+    shortName?: string;
+    logo: string;
+  };
+  played: number;
+  won: number;
+  drawn: number;
+  lost: number;
+  goalsFor: number;
+  goalsAgainst: number;
+  goalDifference: string;
+  points: number;
+  form?: string;
+  description?: string;
 }

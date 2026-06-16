@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Link } from '@/navigation';
-import { fetchTopCompetitions, fetchTopCommunities, fetchOnlineFriends, sendHeartbeat } from '@/lib/api';
+import { fetchAllCompetitions, fetchTopCommunities, fetchOnlineFriends, sendHeartbeat } from '@/lib/api';
 import { useTranslations } from 'next-intl';
 import { Competition, Community, User } from '@football-fan/shared-types';
 import { useAuthStore } from '@/store/useAuthStore';
@@ -13,7 +13,7 @@ export default function Sidebar() {
   const { user } = useAuthStore();
   const pathname = usePathname();
   
-  const [competitions, setCompetitions] = useState<Competition[]>([]);
+  const [allCompetitions, setAllCompetitions] = useState<Competition[]>([]);
   const [communities, setCommunities] = useState<Community[]>([]);
   const [onlineFriends, setOnlineFriends] = useState<User[]>([]);
 
@@ -21,8 +21,8 @@ export default function Sidebar() {
   const [loadingFriends, setLoadingFriends] = useState(true);
 
   const fetchData = () => {
-    fetchTopCompetitions().then(res => {
-      setCompetitions(res.slice(0, 5));
+    fetchAllCompetitions().then(res => {
+      setAllCompetitions(res);
       setLoadingComps(false);
     }).catch(err => {
       console.error(err);
@@ -60,7 +60,7 @@ export default function Sidebar() {
   return (
     <aside className="hidden lg:flex flex-col w-60 shrink-0 h-[calc(100vh-4rem)] sticky top-16 overflow-y-auto scrollbar-thin py-4 px-3 gap-4 border-r border-white/[0.05]">
 
-      {/* Giáº£i Ä‘áº¥u yÃªu thÃ­ch */}
+      {/* Giải đấu yêu thích */}
       <section>
         <h3 className="text-[11px] font-semibold text-gray-500 uppercase tracking-widest px-2 mb-2">
           {t('fav_competitions')}
@@ -68,13 +68,25 @@ export default function Sidebar() {
         <ul className="space-y-0.5">
           {loadingComps ? (
             <li className="px-2 py-2 text-xs text-gray-500">Đang tải...</li>
-          ) : competitions.length > 0 ? competitions.map((comp) => (
+          ) : (() => {
+            const favoriteNames = user?.favoriteCompetitions || [];
+            const displayCompetitions = favoriteNames.length > 0 
+              ? allCompetitions.filter(c => favoriteNames.includes(c.name))
+              : allCompetitions.slice(0, 5);
+
+            return displayCompetitions.length > 0 ? displayCompetitions.map((comp) => (
             <li key={comp.id}>
               <Link
                 href={`/competitions`}
                 className="flex items-center gap-2.5 px-2 py-2 rounded-lg text-gray-400 hover:text-white hover:bg-white/[0.06] transition-all duration-150 group"
               >
-                <span className="text-base w-6 text-center">{comp.logo}</span>
+                <span className="text-base w-6 text-center flex items-center justify-center">
+                  {comp.logo?.startsWith('http') ? (
+                    <div className="w-6 h-6 rounded-md bg-white/90 p-0.5 shadow-sm">
+                      <img src={comp.logo} alt={comp.shortName} className="w-full h-full object-contain inline-block" />
+                    </div>
+                  ) : comp.logo}
+                </span>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-gray-300 group-hover:text-white truncate transition-colors">
                     {comp.shortName}
@@ -83,7 +95,8 @@ export default function Sidebar() {
                 </div>
               </Link>
             </li>
-          )) : <li className="px-2 py-2 text-xs text-gray-500">Chưa có dữ liệu</li>}
+          )) : <li className="px-2 py-2 text-xs text-gray-500">Chưa có dữ liệu</li>;
+          })()}
         </ul>
         <Link
           href="/competitions"

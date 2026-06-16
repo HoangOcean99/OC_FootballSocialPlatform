@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Calendar, ChevronLeft, ChevronRight, Clock, Video } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { fetchAllMatches } from '@/lib/api';
@@ -10,13 +10,27 @@ export default function MatchesPage() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('Tất cả');
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [calendarDate, setCalendarDate] = useState<Date>(new Date());
+  const dateInputRef = useRef<HTMLInputElement>(null);
+
+  // Sync calendar with current date when opened
+  useEffect(() => {
+    if (showDatePicker) {
+      setCalendarDate(new Date(currentDate));
+    }
+  }, [showDatePicker, currentDate]);
 
   useEffect(() => {
     let intervalId: NodeJS.Timeout | null = null;
     setLoading(true);
 
     const loadData = () => {
-      const dateString = currentDate.toISOString().slice(0, 10).replace(/-/g, ''); // YYYYMMDD
+      const year = currentDate.getFullYear();
+      const month = String(currentDate.getMonth() + 1).padStart(2, '0');
+      const day = String(currentDate.getDate()).padStart(2, '0');
+      const dateString = `${year}${month}${day}`;
+      
       fetchAllMatches(dateString)
         .then(data => {
           setMatches(data);
@@ -92,17 +106,108 @@ export default function MatchesPage() {
         </div>
         
         {/* Date Selector */}
-        <div className="flex items-center gap-2 bg-white/[0.03] border border-white/10 rounded-xl p-1">
+        <div className="flex items-center gap-2 bg-white/[0.03] border border-white/10 rounded-xl p-1 relative">
           <button onClick={() => changeDate(-1)} className="p-2 hover:bg-white/10 rounded-lg text-gray-400 transition-colors">
             <ChevronLeft className="w-5 h-5" />
           </button>
-          <div className="px-4 py-1 flex flex-col items-center min-w-[100px]">
-            <span className="text-sm font-bold text-white">{getDayLabel(currentDate)}</span>
-            <span className="text-[10px] text-gray-500 uppercase tracking-widest">{formatDisplayDate(currentDate)}</span>
+          
+          <div 
+            className="px-4 py-1 flex flex-col items-center min-w-[100px] cursor-pointer group"
+            onClick={() => setShowDatePicker(!showDatePicker)}
+          >
+            <span className="text-sm font-bold text-white group-hover:text-emerald-400 transition-colors">{getDayLabel(currentDate)}</span>
+            <span className="text-[10px] text-gray-500 uppercase tracking-widest group-hover:text-gray-300 transition-colors">{formatDisplayDate(currentDate)}</span>
           </div>
+
           <button onClick={() => changeDate(1)} className="p-2 hover:bg-white/10 rounded-lg text-gray-400 transition-colors">
             <ChevronRight className="w-5 h-5" />
           </button>
+
+          {/* Custom Date Picker Popup */}
+          {showDatePicker && (
+            <>
+              {/* Backdrop */}
+              <div className="fixed inset-0 z-40" onClick={() => setShowDatePicker(false)}></div>
+              
+              <motion.div 
+                initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                className="absolute top-full left-1/2 -translate-x-1/2 mt-3 p-4 bg-[#0a0f16]/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl z-50 w-72"
+              >
+                {/* Calendar Header */}
+                <div className="flex justify-between items-center mb-4">
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); setCalendarDate(new Date(calendarDate.getFullYear(), calendarDate.getMonth() - 1, 1)); }}
+                    className="p-1.5 hover:bg-white/10 rounded-lg text-gray-400 hover:text-white transition"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+                  <span className="text-white font-bold text-sm">
+                    {calendarDate.toLocaleString('vi-VN', { month: 'long', year: 'numeric' })}
+                  </span>
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); setCalendarDate(new Date(calendarDate.getFullYear(), calendarDate.getMonth() + 1, 1)); }}
+                    className="p-1.5 hover:bg-white/10 rounded-lg text-gray-400 hover:text-white transition"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
+
+                {/* Days of week */}
+                <div className="grid grid-cols-7 gap-1 mb-2">
+                  {['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'].map(day => (
+                    <div key={day} className="text-center text-[10px] font-bold text-gray-500">{day}</div>
+                  ))}
+                </div>
+
+                {/* Calendar Grid */}
+                <div className="grid grid-cols-7 gap-1">
+                  {Array.from({ length: new Date(calendarDate.getFullYear(), calendarDate.getMonth(), 1).getDay() }).map((_, i) => (
+                    <div key={`blank-${i}`} className="w-8 h-8" />
+                  ))}
+                  {Array.from({ length: new Date(calendarDate.getFullYear(), calendarDate.getMonth() + 1, 0).getDate() }).map((_, i) => {
+                    const day = i + 1;
+                    const isSelected = day === currentDate.getDate() && calendarDate.getMonth() === currentDate.getMonth() && calendarDate.getFullYear() === currentDate.getFullYear();
+                    const isToday = day === new Date().getDate() && calendarDate.getMonth() === new Date().getMonth() && calendarDate.getFullYear() === new Date().getFullYear();
+                    
+                    return (
+                      <button
+                        key={day}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setCurrentDate(new Date(calendarDate.getFullYear(), calendarDate.getMonth(), day));
+                          setShowDatePicker(false);
+                        }}
+                        className={`w-8 h-8 flex items-center justify-center rounded-full text-xs font-bold transition-all ${
+                          isSelected 
+                            ? 'bg-emerald-500 text-white shadow-[0_0_10px_rgba(16,185,129,0.4)]' 
+                            : isToday 
+                              ? 'bg-white/10 text-emerald-400' 
+                              : 'text-gray-300 hover:bg-white/5 hover:text-white'
+                        }`}
+                      >
+                        {day}
+                      </button>
+                    );
+                  })}
+                </div>
+                
+                <div className="mt-4 pt-3 border-t border-white/10 flex justify-center">
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setCurrentDate(new Date());
+                      setShowDatePicker(false);
+                    }}
+                    className="text-xs font-bold text-emerald-400 hover:text-emerald-300 transition"
+                  >
+                    Trở về hôm nay
+                  </button>
+                </div>
+              </motion.div>
+            </>
+          )}
         </div>
       </div>
 

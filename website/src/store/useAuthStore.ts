@@ -12,6 +12,7 @@ interface User {
   xp: number;
   favoriteClubs: string[];
   favoriteNationalTeams: string[];
+  favoriteCompetitions: string[];
   onboardingCompleted: boolean;
   tier: 'REGULAR' | 'PLUS';
 }
@@ -23,6 +24,7 @@ interface AuthState {
   setAuth: (user: User, token: string) => void;
   clearAuth: () => void;
   updateUser: (user: Partial<User>) => void;
+  toggleFavoriteCompetition: (name: string) => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -45,6 +47,38 @@ export const useAuthStore = create<AuthState>()(
         set((state) => ({
           user: state.user ? { ...state.user, ...partial } : null,
         })),
+      toggleFavoriteCompetition: async (name: string) => {
+        const { user, token } = useAuthStore.getState();
+        if (!user || !token) return;
+
+        const isFollowing = user.favoriteCompetitions?.includes(name);
+        
+        // Optimistic UI update
+        set((state) => ({
+          user: state.user ? {
+            ...state.user,
+            favoriteCompetitions: isFollowing 
+              ? state.user.favoriteCompetitions.filter(n => n !== name)
+              : [...(state.user.favoriteCompetitions || []), name]
+          } : null
+        }));
+
+        try {
+          const res = await fetch(`http://localhost:3001/api/users/me/favorites/competitions/${encodeURIComponent(name)}`, {
+            method: isFollowing ? 'DELETE' : 'POST',
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          const data = await res.json();
+          if (data.success) {
+            set((state) => ({
+              user: state.user ? { ...state.user, favoriteCompetitions: data.favoriteCompetitions } : null
+            }));
+          }
+        } catch (error) {
+          console.error('Failed to toggle favorite competition:', error);
+          // Revert on failure (could be improved)
+        }
+      }
     }),
     { name: 'footballverse-auth' }
   )

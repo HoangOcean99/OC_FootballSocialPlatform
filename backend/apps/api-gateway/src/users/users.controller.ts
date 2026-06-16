@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Put, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Param, Put, Post, Delete, UseGuards, Request } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
@@ -35,5 +35,19 @@ export class UsersController {
   async updateHeartbeat(@Request() req: any) {
     await this.usersService.updateLastActive(req.user.sub);
     return { success: true };
+  }
+
+  @Post('me/favorites/competitions/:name')
+  @UseGuards(JwtAuthGuard)
+  async addFavoriteCompetition(@Request() req: any, @Param('name') name: string) {
+    const user = await this.usersService.addFavoriteCompetition(req.user.sub, name);
+    return { success: true, favoriteCompetitions: user?.favoriteCompetitions || [] };
+  }
+
+  @Delete('me/favorites/competitions/:name')
+  @UseGuards(JwtAuthGuard)
+  async removeFavoriteCompetition(@Request() req: any, @Param('name') name: string) {
+    const user = await this.usersService.removeFavoriteCompetition(req.user.sub, name);
+    return { success: true, favoriteCompetitions: user?.favoriteCompetitions || [] };
   }
 }

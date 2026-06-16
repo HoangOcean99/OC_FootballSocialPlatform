@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
+  <circle cx="200" cy="200" r="190" fill="#0033a0" />
+  <text x="200" y="220" font-family="Arial, sans-serif" font-weight="bold" font-size="90" fill="white" text-anchor="middle">UEFA</text>
+  <path d="M100 250 Q200 350 300 250" fill="none" stroke="white" stroke-width="15" />
+</svg>

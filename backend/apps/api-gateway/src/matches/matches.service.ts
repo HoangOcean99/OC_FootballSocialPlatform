@@ -140,12 +140,33 @@ export class MatchesService implements OnModuleInit, OnModuleDestroy {
         const homeKey = homeCompetitor.team.name?.toLowerCase().replace(/[^a-z0-9]/g, '') || '';
         const awayKey = awayCompetitor.team.name?.toLowerCase().replace(/[^a-z0-9]/g, '') || '';
         const matchKey = `${homeKey}_${awayKey}`;
-        const enriched = enrichmentData ? enrichmentData[matchKey] : null;
+        let enriched = enrichmentData ? enrichmentData[matchKey] : null;
+        if (!enriched && enrichmentData) {
+          const keys = Object.keys(enrichmentData);
+          for (const key of keys) {
+            const parts = key.split('_');
+            if (parts.length === 2) {
+              const apiHome = parts[0];
+              const apiAway = parts[1];
+              // Use length-based substring check to avoid matching 'man' with 'oman' incorrectly,
+              // but for now simple includes is fine since it's constrained by BOTH home and away matching.
+              if ((homeKey.includes(apiHome) || apiHome.includes(homeKey)) && 
+                  (awayKey.includes(apiAway) || apiAway.includes(awayKey))) {
+                enriched = enrichmentData[key];
+                break;
+              }
+            }
+          }
+        }
 
         let mappedRound = event.competitions[0]?.notes?.[0]?.headline || (event.season?.slug ? event.season.slug.replace(/-/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase()) : event.season?.year?.toString()) || '';
         // Override round with enriched data if available
         if (enriched && enriched.round) {
-          mappedRound = enriched.round;
+          if (mappedRound.toLowerCase().includes('group') && enriched.round.toLowerCase().includes('group') && mappedRound.toLowerCase() !== enriched.round.toLowerCase()) {
+            mappedRound = `${mappedRound} - ${enriched.round}`;
+          } else {
+            mappedRound = enriched.round;
+          }
         }
 
         acc.push({

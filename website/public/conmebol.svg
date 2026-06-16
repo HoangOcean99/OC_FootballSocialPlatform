@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
+  <circle cx="200" cy="200" r="190" fill="#002b5e" />
+  <text x="200" y="210" font-family="Arial, sans-serif" font-weight="bold" font-size="60" fill="#ffffff" text-anchor="middle">CONMEBOL</text>
+  <path d="M150 250 L250 250 L200 300 Z" fill="#00a74a" />
+</svg>
