@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Put, Post, Delete, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Param, Put, Post, Delete, UseGuards, Request, Query } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
@@ -20,6 +20,13 @@ export class UsersController {
   @Get('online')
   async getOnlineUsers() {
     const users = await this.usersService.getOnlineUsers();
+    return users.map((u) => ({ id: u._id.toString(), ...u.toObject(), _id: undefined, __v: undefined }));
+  }
+
+  @Get('search')
+  @UseGuards(JwtAuthGuard)
+  async searchUsers(@Query('q') query: string) {
+    const users = await this.usersService.searchUsers(query);
     return users.map((u) => ({ id: u._id.toString(), ...u.toObject(), _id: undefined, __v: undefined }));
   }
 

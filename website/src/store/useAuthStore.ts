@@ -13,6 +13,7 @@ interface User {
   favoriteClubs: string[];
   favoriteNationalTeams: string[];
   favoriteCompetitions: string[];
+  joinedCommunities: string[];
   onboardingCompleted: boolean;
   tier: 'REGULAR' | 'PLUS';
 }

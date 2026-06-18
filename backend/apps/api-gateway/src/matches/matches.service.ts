@@ -189,7 +189,7 @@ export class MatchesService implements OnModuleInit, OnModuleDestroy {
           awayScore: parseInt(awayCompetitor.score) || 0,
           kickoff: new Date(event.date),
           status: mappedStatus,
-          minute: event.status.clock || 0,
+          minute: Math.floor((event.status.clock || 0) / 60),
           round: mappedRound,
           stadium: enriched?.stadium || event.competitions[0].venue?.fullName || 'Unknown Stadium',
         });

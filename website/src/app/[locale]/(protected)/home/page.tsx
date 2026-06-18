@@ -12,7 +12,26 @@ import {
 } from '@/lib/api';
 import { Match, Post, Community, Predictor } from '@football-fan/shared-types';
 
-export function formatKickoff(isoString: string): string {
+import { useRouter } from 'next/navigation';
+import { toast } from 'react-hot-toast';
+import ReactionButton from '@/components/ReactionButton';
+
+export function formatTimeAgo(dateStr: string | Date): string {
+  if (!dateStr) return 'Vừa xong';
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const minutes = Math.floor(diff / 60000);
+  if (minutes < 1) return 'Vừa xong';
+  if (minutes < 60) return `${minutes} phút trước`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours} giờ trước`;
+  const days = Math.floor(hours / 24);
+  if (days < 30) return `${days} ngày trước`;
+  const months = Math.floor(days / 30);
+  if (months < 12) return `${months} tháng trước`;
+  return `${Math.floor(months / 12)} năm trước`;
+}
+
+function formatKickoff(isoString: string): string {
   const date = new Date(isoString);
   const now = new Date();
   const diffDays = Math.floor(
@@ -29,7 +48,7 @@ export function formatKickoff(isoString: string): string {
   return `${date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })} ${timeStr}`;
 }
 
-export function formatNumber(num: number): string {
+function formatNumber(num: number): string {
   if (num >= 1_000_000) return `${(num / 1_000_000).toFixed(1)}M`;
   if (num >= 1_000) return `${(num / 1_000).toFixed(1)}K`;
   return num.toString();
@@ -38,6 +57,18 @@ export function formatNumber(num: number): string {
 // ─────────────────────────────────────────────
 // Sub-components
 // ─────────────────────────────────────────────
+
+/** Helper to render logo image or emoji */
+function Logo({ src, className }: { src: string; className?: string }) {
+  if (!src) return null;
+  if (src.startsWith('http')) {
+    return (
+      /* eslint-disable-next-line @next/next/no-img-element */
+      <img src={src} alt="logo" className={`object-contain ${className}`} />
+    );
+  }
+  return <span className={className}>{src}</span>;
+}
 
 /** Pulsing LIVE indicator */
 function LiveBadge({ minute, status }: { minute: number; status: string }) {
@@ -65,7 +96,7 @@ function LiveMatchCard({ match }: { match: Match }) {
         {/* Competition + Live badge */}
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-1.5">
-            <span className="text-sm">{match.competitionLogo}</span>
+            <Logo src={match.competitionLogo} className="w-4 h-4" />
             <span className="text-[11px] font-medium text-gray-500 truncate max-w-[90px]">
               {match.competition}
             </span>
@@ -78,7 +109,7 @@ function LiveMatchCard({ match }: { match: Match }) {
           {/* Home team */}
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2 min-w-0">
-              <span className="text-lg">{match.homeTeam.logo}</span>
+              <Logo src={match.homeTeam.logo} className="w-5 h-5" />
               <span className="text-sm font-semibold text-white truncate">
                 {match.homeTeam.shortName}
               </span>
@@ -96,7 +127,7 @@ function LiveMatchCard({ match }: { match: Match }) {
           {/* Away team */}
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2 min-w-0">
-              <span className="text-lg">{match.awayTeam.logo}</span>
+              <Logo src={match.awayTeam.logo} className="w-5 h-5" />
               <span className="text-sm font-semibold text-white truncate">
                 {match.awayTeam.shortName}
               </span>
@@ -114,24 +145,31 @@ function LiveMatchCard({ match }: { match: Match }) {
 
 /** Post card */
 function PostCard({ post }: { post: Post }) {
-  const [liked, setLiked] = useState(post.isLiked);
-  const [likeCount, setLikeCount] = useState(post.likes);
+  const router = useRouter();
 
-  function toggleLike() {
-    setLiked((prev) => !prev);
-    setLikeCount((prev) => (liked ? prev - 1 : prev + 1));
+  function handleShare(e: React.MouseEvent) {
+    e.stopPropagation();
+    const url = `${window.location.origin}/post/${post.id}`;
+    navigator.clipboard.writeText(url).then(() => {
+      toast.success('Đã copy link bài viết');
+    }).catch(() => {
+      toast.error('Lỗi copy link');
+    });
   }
 
   return (
-    <article className="rounded-2xl bg-white/[0.04] border border-white/[0.08] backdrop-blur-xl p-5 hover:border-white/[0.14] hover:bg-white/[0.06] transition-all duration-300 group">
+    <article 
+      className="rounded-2xl bg-white/[0.04] border border-white/[0.08] backdrop-blur-xl p-5 hover:border-white/[0.14] hover:bg-white/[0.06] transition-all duration-300 group cursor-pointer"
+      onClick={() => router.push(`/post/${post.id}`)}
+    >
       {/* Author row */}
-      <div className="flex items-start gap-3 mb-4">
+      <div className="flex items-start gap-3 mb-4" onClick={e => e.stopPropagation()}>
         {/* Avatar */}
-        <div
-          className={`w-10 h-10 rounded-xl ${post.author.avatarColor} flex items-center justify-center text-sm font-bold text-white shrink-0 shadow-lg`}
-        >
-          {post.author.initials}
-        </div>
+        <img
+          src={post.author.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${post.author.username}`}
+          alt="Avatar"
+          className="w-10 h-10 rounded-xl border border-white/10 shrink-0 shadow-lg object-cover bg-white/5"
+        />
 
         {/* Author info */}
         <div className="flex-1 min-w-0">
@@ -146,11 +184,11 @@ function PostCard({ post }: { post: Post }) {
           <div className="flex items-center gap-1.5 mt-0.5">
             {/* Community */}
             <span className="text-sm">{post.community.emoji}</span>
-            <span className="text-[11px] text-emerald-500 hover:text-emerald-400 cursor-pointer transition-colors">
+            <span className="text-[11px] text-emerald-500 hover:text-emerald-400 cursor-pointer transition-colors" onClick={(e) => { e.stopPropagation(); router.push(`/communities/${post.community.slug}`); }}>
               {post.community.name}
             </span>
             <span className="text-gray-700">·</span>
-            <span className="text-[11px] text-gray-600">{post.timeAgo}</span>
+            <span className="text-[11px] text-gray-600">{formatTimeAgo(post.createdAt)}</span>
           </div>
         </div>
 
@@ -163,14 +201,20 @@ function PostCard({ post }: { post: Post }) {
       </div>
 
       {/* Content */}
-      <p className="text-sm text-gray-300 leading-relaxed mb-3">{post.content}</p>
+      <p className="text-sm text-gray-300 leading-relaxed mb-3 whitespace-pre-wrap">{post.content}</p>
+      {post.image && (
+        <div className="mb-4 rounded-xl overflow-hidden border border-white/10">
+          <img src={post.image} alt="Post image" className="w-full h-auto max-h-[500px] object-cover" />
+        </div>
+      )}
 
       {/* Tags */}
-      {post.tags.length > 0 && (
+      {post.tags && post.tags.length > 0 && (
         <div className="flex flex-wrap gap-1.5 mb-4">
           {post.tags.map((tag) => (
             <span
               key={tag}
+              onClick={(e) => { e.stopPropagation(); }}
               className="text-[11px] text-sky-400 hover:text-sky-300 cursor-pointer transition-colors"
             >
               #{tag}
@@ -184,21 +228,13 @@ function PostCard({ post }: { post: Post }) {
 
       {/* Actions */}
       <div className="flex items-center gap-1">
-        {/* Like */}
-        <button
-          onClick={toggleLike}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200
-            ${liked
-              ? 'text-rose-400 bg-rose-400/10 hover:bg-rose-400/20'
-              : 'text-gray-500 hover:text-white hover:bg-white/[0.06]'
-            }`}
-        >
-          <svg className="w-4 h-4" fill={liked ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-              d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-          </svg>
-          <span>{formatNumber(likeCount)}</span>
-        </button>
+        {/* Reaction */}
+        <ReactionButton
+          postId={post.id}
+          initialCount={post.likes}
+          initialReaction={post.isLiked ? 'like' : null}
+          size="sm"
+        />
 
         {/* Comment */}
         <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium text-gray-500 hover:text-white hover:bg-white/[0.06] transition-all duration-200">
@@ -210,7 +246,7 @@ function PostCard({ post }: { post: Post }) {
         </button>
 
         {/* Share */}
-        <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium text-gray-500 hover:text-white hover:bg-white/[0.06] transition-all duration-200">
+        <button onClick={handleShare} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium text-gray-500 hover:text-white hover:bg-white/[0.06] transition-all duration-200">
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
               d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
@@ -219,7 +255,7 @@ function PostCard({ post }: { post: Post }) {
         </button>
 
         {/* Bookmark */}
-        <button className="ml-auto p-1.5 rounded-lg text-gray-600 hover:text-white hover:bg-white/[0.06] transition-all duration-200">
+        <button onClick={(e) => { e.stopPropagation(); }} className="ml-auto p-1.5 rounded-lg text-gray-600 hover:text-white hover:bg-white/[0.06] transition-all duration-200">
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
               d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-4-7 4V5z" />
@@ -237,13 +273,13 @@ function UpcomingMatchRow({ match }: { match: Match }) {
       {/* Teams */}
       <div className="flex-1 min-w-0 space-y-1">
         <div className="flex items-center gap-1.5">
-          <span className="text-base">{match.homeTeam.logo}</span>
+          <Logo src={match.homeTeam.logo} className="w-5 h-5" />
           <span className="text-sm font-medium text-gray-300 truncate group-hover:text-white transition-colors">
             {match.homeTeam.shortName}
           </span>
         </div>
         <div className="flex items-center gap-1.5">
-          <span className="text-base">{match.awayTeam.logo}</span>
+          <Logo src={match.awayTeam.logo} className="w-5 h-5" />
           <span className="text-sm font-medium text-gray-400 truncate">
             {match.awayTeam.shortName}
           </span>
@@ -254,7 +290,7 @@ function UpcomingMatchRow({ match }: { match: Match }) {
       <div className="text-right shrink-0">
         <p className="text-xs font-semibold text-emerald-400">{formatKickoff(match.kickoff)}</p>
         <div className="flex items-center gap-1 justify-end mt-0.5">
-          <span className="text-xs">{match.competitionLogo}</span>
+          <Logo src={match.competitionLogo} className="w-3.5 h-3.5" />
           <span className="text-[10px] text-gray-600">{match.round}</span>
         </div>
       </div>
@@ -270,8 +306,13 @@ function CommunityCard({ community }: { community: Community }) {
   return (
     <div className="flex items-center gap-3 py-2 group">
       {/* Logo */}
-      <div className="w-9 h-9 rounded-xl bg-white/[0.06] flex items-center justify-center text-base shrink-0">
-        {community.logo}
+      <div className="w-9 h-9 rounded-xl bg-white/[0.06] flex items-center justify-center text-base shrink-0 overflow-hidden">
+        {community.logo && community.logo.startsWith('http') ? (
+          /* eslint-disable-next-line @next/next/no-img-element */
+          <img src={community.logo} alt="Logo" className="w-full h-full object-cover" />
+        ) : (
+          community.logo
+        )}
       </div>
 
       {/* Info */}

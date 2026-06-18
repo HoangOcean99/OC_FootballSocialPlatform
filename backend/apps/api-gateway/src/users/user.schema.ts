@@ -45,16 +45,16 @@ export class User implements Omit<IUserProfile, 'id'> {
   @Prop({ default: 1 })
   level: number;
 
-  @Prop({ required: true })
+  @Prop({ default: 'Thành viên mới' })
   levelTitle: string;
 
   @Prop({ default: 0 })
   xp: number;
 
-  @Prop({ required: true })
+  @Prop({ default: () => new Date().toLocaleDateString('vi-VN', { month: 'long', year: 'numeric' }) })
   joinDate: string;
 
-  @Prop({ required: true })
+  @Prop({ default: 'Tân binh' })
   levelName: string;
 
   @Prop({ default: 1000 })
@@ -92,6 +92,12 @@ export class User implements Omit<IUserProfile, 'id'> {
 
   @Prop({ type: [String], default: [] })
   joinedCommunities: string[];
+
+  @Prop({ type: [String], default: [] })
+  communityInvites: string[];
+
+  @Prop({ type: [String], default: [] })
+  adminInvites: string[];
 
   @Prop({ type: [String], default: [] })
   communityEmojis: string[];

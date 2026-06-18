@@ -29,8 +29,23 @@ export class UsersService implements OnModuleInit, OnModuleDestroy {
     return this.userModel.find().sort({ rank: 1 }).limit(10).exec();
   }
 
+  async findById(id: string) {
+    return this.userModel.findById(id).exec();
+  }
+
   async getProfile(username: string) {
     return this.userModel.findOne({ username }).exec();
+  }
+
+  async searchUsers(query: string) {
+    if (!query || query.trim().length === 0) return [];
+    const searchRegex = new RegExp(query, 'i');
+    return this.userModel.find({
+      $or: [
+        { username: searchRegex },
+        { displayName: searchRegex }
+      ]
+    }).limit(10).select('username displayName avatarUrl role').exec();
   }
 
   async updateLastActive(userId: string) {

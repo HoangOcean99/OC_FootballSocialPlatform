@@ -32,6 +32,11 @@ export const fetchTrendingPosts = async () => {
   return data;
 };
 
+export const fetchPostById = async (id: string) => {
+  const { data } = await api.get(`/posts/${id}`);
+  return data;
+};
+
 export const fetchTopCommunities = async () => {
   const { data } = await api.get('/communities/top');
   return data;
@@ -108,5 +113,187 @@ export const fetchCompetitionStandings = async (id: string, season?: string) => 
 export const fetchCompetitionMatches = async (id: string, season?: string) => {
   const url = season ? `/competitions/${id}/matches?season=${season}` : `/competitions/${id}/matches`;
   const { data } = await api.get(url);
+  return data;
+};
+
+export const createCommunity = async (communityData: any) => {
+  const { data } = await api.post('/communities', communityData);
+  return data;
+};
+
+export const fetchCommunityDetails = async (id: string) => {
+  const { data } = await api.get(`/communities/${id}`);
+  return data;
+};
+
+export const joinCommunity = async (id: string) => {
+  const { data } = await api.post(`/communities/${id}/join`);
+  return data;
+};
+
+export const leaveCommunity = async (id: string) => {
+  const { data } = await api.post(`/communities/${id}/leave`);
+  return data;
+};
+
+export const checkCommunityName = async (name: string) => {
+  const { data } = await api.get(`/communities/check-name?name=${encodeURIComponent(name)}`);
+  return data;
+};
+
+export const updateCommunity = async (id: string, communityData: any) => {
+  const { data } = await api.put(`/communities/${id}`, communityData);
+  return data;
+};
+
+export const deleteCommunity = async (id: string) => {
+  const { data } = await api.delete(`/communities/${id}`);
+  return data;
+};
+
+export const batchDeleteCommunities = async (ids: string[]) => {
+  const { data } = await api.post(`/communities/batch-delete`, { ids });
+  return data;
+};
+
+// Upload Image to Backend (Cloudinary)
+export const uploadImage = async (file: File, folder?: string): Promise<string> => {
+  const formData = new FormData();
+  formData.append('image', file);
+  if (folder) {
+    formData.append('folder', folder);
+  }
+  
+  const { data } = await api.post('/upload', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
+  return data.url;
+};
+
+export const fetchCommunityRequests = async (id: string) => {
+  const { data } = await api.get(`/communities/${id}/requests`);
+  return data;
+};
+
+export const approveCommunityRequest = async (id: string, userId: string) => {
+  const { data } = await api.post(`/communities/${id}/requests/${userId}/approve`);
+  return data;
+};
+
+export const rejectCommunityRequest = async (id: string, userId: string) => {
+  const { data } = await api.post(`/communities/${id}/requests/${userId}/reject`);
+  return data;
+};
+
+export const fetchCommunityMembers = async (id: string) => {
+  const { data } = await api.get(`/communities/${id}/members`);
+  return data;
+};
+
+export const kickCommunityMember = async (id: string, userId: string) => {
+  const { data } = await api.post(`/communities/${id}/members/${userId}/kick`);
+  return data;
+};
+
+export const inviteCommunityMember = async (id: string, username: string) => {
+  const { data } = await api.post(`/communities/${id}/members/invite`, { username });
+  return data;
+};
+
+export const searchUsers = async (query: string) => {
+  const { data } = await api.get(`/users/search?q=${encodeURIComponent(query)}`);
+  return data;
+};
+
+export const fetchMyInvites = async () => {
+  const { data } = await api.get('/communities/me/invites');
+  return data;
+};
+
+export const acceptCommunityInvite = async (id: string) => {
+  const { data } = await api.post(`/communities/${id}/invites/accept`);
+  return data;
+};
+
+export const rejectCommunityInvite = async (id: string) => {
+  const { data } = await api.post(`/communities/${id}/invites/reject`);
+  return data;
+};
+
+export const promoteCommunityAdmin = async (id: string, userId: string) => {
+  const { data } = await api.post(`/communities/${id}/admins/promote`, { userId });
+  return data;
+};
+
+export const fetchMyAdminInvites = async () => {
+  const { data } = await api.get('/communities/me/admin-invites');
+  return data;
+};
+
+export const acceptCommunityAdminInvite = async (id: string) => {
+  const { data } = await api.post(`/communities/${id}/admins/accept`);
+  return data;
+};
+
+export const rejectCommunityAdminInvite = async (id: string) => {
+  const { data } = await api.post(`/communities/${id}/admins/reject`);
+  return data;
+};
+
+export const resignCommunityAdmin = async (id: string) => {
+  const { data } = await api.post(`/communities/${id}/admins/resign`);
+  return data;
+};
+
+// Posts & Comments
+export const createPost = async (communityId: string, content: string, image?: string) => {
+  const { data } = await api.post(`/posts/community/${communityId}`, { content, image });
+  return data;
+};
+
+export const reactPost = async (postId: string, reaction: string | null) => {
+  const { data } = await api.post(`/posts/${postId}/react`, { reaction });
+  return data;
+};
+
+export const fetchCommunityPosts = async (communityId: string) => {
+  const { data } = await api.get(`/posts/community/${communityId}`);
+  return data;
+};
+
+export const fetchPendingPosts = async (communityId: string) => {
+  const { data } = await api.get(`/posts/community/${communityId}/pending`);
+  return data;
+};
+
+export const approvePost = async (id: string) => {
+  const { data } = await api.put(`/posts/${id}/approve`);
+  return data;
+};
+
+export const rejectPost = async (id: string) => {
+  const { data } = await api.put(`/posts/${id}/reject`);
+  return data;
+};
+
+export const deletePost = async (id: string) => {
+  const { data } = await api.delete(`/posts/${id}`);
+  return data;
+};
+
+export const createComment = async (postId: string, content: string, parentId?: string, image?: string) => {
+  const { data } = await api.post(`/posts/${postId}/comments`, { content, parentId, image });
+  return data;
+};
+
+export const fetchPostComments = async (postId: string) => {
+  const { data } = await api.get(`/posts/${postId}/comments`);
+  return data;
+};
+
+export const deleteComment = async (commentId: string) => {
+  const { data } = await api.delete(`/posts/comments/${commentId}`);
   return data;
 };

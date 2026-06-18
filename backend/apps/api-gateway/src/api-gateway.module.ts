@@ -13,6 +13,8 @@ import { CompetitionsModule } from './competitions/competitions.module';
 import { PredictionsModule } from './predictions/predictions.module';
 import { AdminModule } from './admin/admin.module';
 import { JwtModule } from '@nestjs/jwt';
+import { UploadModule } from './upload/upload.module';
+import { WebsocketsModule } from './websockets/websockets.module';
 
 @Module({
   imports: [
@@ -25,6 +27,7 @@ import { JwtModule } from '@nestjs/jwt';
       inject: [ConfigService],
     }),
     JwtModule.registerAsync({
+      global: true,
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
         secret: configService.get<string>('JWT_SECRET') || 'footballverse-super-secret-2026',
@@ -38,6 +41,7 @@ import { JwtModule } from '@nestjs/jwt';
     UsersModule,
     CompetitionsModule,
     PredictionsModule,
+    UploadModule,
     ClientsModule.registerAsync([
       {
         name: 'AUTH_SERVICE',
@@ -53,6 +57,7 @@ import { JwtModule } from '@nestjs/jwt';
       },
     ]),
     AdminModule,
+    WebsocketsModule,
   ],
   controllers: [ApiGatewayController, AuthController],
   providers: [ApiGatewayService],

@@ -77,25 +77,60 @@ export interface Post {
   likes: number;
   comments: number;
   shares: number;
-  timeAgo: string;
   tags: string[];
   isLiked: boolean;
+  status?: 'PENDING' | 'APPROVED' | 'REJECTED';
+  createdAt: Date;
+}
+
+export interface Comment {
+  id: string;
+  postId: string;
+  author: PostAuthor;
+  content: string;
+  image?: string;
+  likes: number;
+  isLiked?: boolean;
+  parentId?: string; // For nested replies
+  createdAt: Date;
+  replies?: Comment[]; // For frontend tree structure
 }
 
 export interface Community {
-  id: string;
+  id?: string;
   name: string;
   slug: string;
   description: string;
-  logo: string;
-  memberCount: number;
-  postsToday: number;
-  category: string;
-  isJoined: boolean;
+  logo: string; // Emoji or ImgBB URL
   coverColor: string;
-  cover?: string;
-  members?: string;
-  posts?: string;
+  cover?: string; // ImgBB URL
+  category: string;
+  members?: number;
+  memberCount?: number;
+  posts?: number;
+  postsToday?: number;
+  isJoined?: boolean;
+  creatorId?: string;
+  adminIds?: string[];
+  
+  // New Fields
+  slogan?: string;
+  rules?: string;
+  tags?: string[];
+  foundedDate?: Date;
+  location?: string;
+  socialLinks?: {
+    facebook?: string;
+    discord?: string;
+    instagram?: string;
+    youtube?: string;
+  };
+  website?: string;
+  isPrivate?: boolean;
+  requireApproval?: boolean;
+  requirePostApproval?: boolean;
+  joinRequests?: string[];
+  themeColor?: string;
 }
 
 export interface Achievement {

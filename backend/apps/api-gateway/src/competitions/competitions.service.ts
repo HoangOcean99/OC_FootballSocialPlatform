@@ -220,7 +220,7 @@ export class CompetitionsService implements OnModuleInit, OnModuleDestroy {
           awayScore: parseInt(away.score) || 0,
           kickoff: new Date(event.date),
           status,
-          minute: event.status.clock || 0,
+          minute: Math.floor((event.status.clock || 0) / 60),
           round: event.season?.slug || event.competitions[0]?.notes?.[0]?.headline || '',
           note: event.competitions[0]?.notes?.[0]?.headline || '',
         };

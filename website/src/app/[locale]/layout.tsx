@@ -26,6 +26,7 @@ export const metadata: Metadata = {
 };
 
 import NextTopLoader from 'nextjs-toploader';
+import { SocketProvider } from '@/components/providers/SocketProvider';
 
 export default async function LocaleLayout({
   children,
@@ -63,7 +64,9 @@ export default async function LocaleLayout({
             speed={200}
             shadow="0 0 10px #22c55e,0 0 5px #22c55e"
           />
-          {children}
+          <SocketProvider>
+            {children}
+          </SocketProvider>
           <Toaster 
             position="bottom-center" 
             toastOptions={{ 
