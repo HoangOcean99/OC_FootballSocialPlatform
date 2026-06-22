@@ -15,6 +15,7 @@ import { AdminModule } from './admin/admin.module';
 import { JwtModule } from '@nestjs/jwt';
 import { UploadModule } from './upload/upload.module';
 import { WebsocketsModule } from './websockets/websockets.module';
+import { ShopModule } from './shop/shop.module';
 
 @Module({
   imports: [
@@ -58,6 +59,7 @@ import { WebsocketsModule } from './websockets/websockets.module';
     ]),
     AdminModule,
     WebsocketsModule,
+    ShopModule,
   ],
   controllers: [ApiGatewayController, AuthController],
   providers: [ApiGatewayService],

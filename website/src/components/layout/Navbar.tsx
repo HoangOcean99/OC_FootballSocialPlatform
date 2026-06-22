@@ -19,6 +19,7 @@ export default function Navbar() {
     { href: '/competitions', label: t('nav_competitions'), icon: '🏆' },
     { href: '/communities', label: t('nav_communities'), icon: '👥' },
     { href: '/predictions', label: t('nav_predictions'), icon: '🎯' },
+    { href: '/shop', label: 'Cửa Hàng', icon: '🛍️' },
   ];
   const pathname = usePathname();
   const router = useRouter();
@@ -60,7 +61,7 @@ export default function Navbar() {
           {/* Nav Links — Desktop */}
           <div className="hidden lg:flex items-center gap-1 flex-1 ms-5">
             {NAV_LINKS.map(({ href, label, icon }) => {
-              const isActive = pathname === href;
+              const isActive = pathname === href || pathname.startsWith(`${href}/`);
               return (
                 <Link
                   key={href}
@@ -144,23 +145,43 @@ export default function Navbar() {
             <div className="hidden lg:block w-px h-6 bg-white/[0.08]" />
 
             {/* User Avatar / Login (Desktop) */}
-            <div className="hidden lg:flex items-center gap-2">
+            <div className="hidden lg:flex items-center gap-4">
               {user ? (
-                <div className="relative group cursor-pointer">
-                  <Link
-                    href="/profile"
-                    className="w-9 h-9 rounded-xl bg-emerald-600 flex items-center justify-center text-sm font-bold text-white ring-2 ring-emerald-400/30 group-hover:ring-emerald-400/60 transition-all duration-200 overflow-hidden"
-                  >
-                    {user.avatarUrl ? (
-                      <img src={user.avatarUrl} alt="Avatar" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-                    ) : (
-                      initials
+                <>
+                  <div className="flex items-center gap-2 bg-amber-500/10 text-amber-500 px-3 py-1.5 rounded-lg border border-amber-500/20">
+                    <span className="text-sm font-bold">{user.xp?.toLocaleString() || 0} XP</span>
+                  </div>
+                  <div className="relative group cursor-pointer">
+                  <div className="relative w-9 h-9">
+                    <Link
+                      href="/profile"
+                      className={`w-full h-full rounded-xl flex items-center justify-center text-sm font-bold text-white overflow-hidden transition-all duration-200 ${
+                        user.purchasedItems?.includes('frame_dragon') ? 'ring-2 ring-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)] bg-emerald-600' : 'ring-2 ring-emerald-400/30 group-hover:ring-emerald-400/60 bg-emerald-600'
+                      }`}
+                    >
+                      {user.avatarUrl ? (
+                        <img src={user.avatarUrl} alt="Avatar" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                      ) : (
+                        initials
+                      )}
+                    </Link>
+                    {user.purchasedItems?.includes('frame_dragon') && (
+                      <div className="absolute -inset-1 border border-amber-500/50 rounded-[14px] animate-pulse pointer-events-none" />
                     )}
-                  </Link>
-                  <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-400 rounded-full border-2 border-[#080d14]" />
+                    <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-400 rounded-full border-2 border-[#080d14]" />
+                  </div>
                   <div className="absolute top-full mt-2 right-0 bg-[#0f1923] border border-white/10 rounded-xl p-2 min-w-[160px] opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none group-hover:pointer-events-auto z-50 shadow-xl before:absolute before:-top-3 before:left-0 before:right-0 before:h-3">
                     <div className="px-2 py-1 flex items-center gap-2">
-                      <p className="text-white text-sm font-bold truncate">@{user.username}</p>
+                      <div className="flex items-center gap-1">
+                        <p className={`text-sm truncate ${
+                          user.purchasedItems?.includes('name_vip_red')
+                            ? 'text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-rose-400 drop-shadow-[0_0_8px_rgba(239,68,68,0.5)] font-bold'
+                            : 'text-white font-bold'
+                        }`}>@{user.username}</p>
+                        {user.purchasedItems?.includes('badge_wizard') && (
+                          <span className="text-xs drop-shadow-[0_0_8px_rgba(250,204,21,0.8)] animate-pulse" title="Huy Hiệu Phù Thuỷ Dự Đoán">🌟</span>
+                        )}
+                      </div>
                       {user.tier === 'PLUS' && (
                         <span className="bg-gradient-to-r from-amber-400 to-amber-600 text-[#0f1923] text-[9px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider shadow-sm shadow-amber-500/20">
                           PLUS
@@ -182,6 +203,7 @@ export default function Navbar() {
                     </button>
                   </div>
                 </div>
+                </>
               ) : (
                 <Link href="/login" className="text-sm font-semibold bg-gradient-to-r from-emerald-500 to-emerald-600 text-white px-4 py-2 rounded-xl transition-all">
                   {t('login')}
@@ -245,7 +267,7 @@ export default function Navbar() {
             <div className="flex flex-col gap-2">
               <p className="text-xs font-bold text-gray-500 uppercase tracking-wider px-2 mb-1">Menu</p>
               {NAV_LINKS.map(({ href, label, icon }) => {
-                const isActive = pathname === href;
+                const isActive = pathname === href || pathname.startsWith(`${href}/`);
                 return (
                   <Link
                     key={href}

@@ -16,6 +16,10 @@ interface User {
   joinedCommunities: string[];
   onboardingCompleted: boolean;
   tier: 'REGULAR' | 'PLUS';
+  dailyPredictionsCount?: number;
+  extraPredictions?: number;
+  lastPredictionDate?: string;
+  purchasedItems?: string[];
 }
 
 interface AuthState {

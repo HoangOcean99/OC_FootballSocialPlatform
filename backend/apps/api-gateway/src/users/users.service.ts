@@ -26,11 +26,15 @@ export class UsersService implements OnModuleInit, OnModuleDestroy {
   }
 
   async getTopPredictors() {
-    return this.userModel.find().sort({ rank: 1 }).limit(10).exec();
+    return this.userModel.find().sort({ 'predictionStats.correct': -1, xp: -1 }).limit(10).select('username displayName avatarUrl avatarColor initials xp predictionStats').exec();
   }
 
   async findById(id: string) {
     return this.userModel.findById(id).exec();
+  }
+
+  async findUsersByIds(ids: string[]) {
+    return this.userModel.find({ _id: { $in: ids } }).select('username displayName avatarUrl avatarColor initials purchasedItems').exec();
   }
 
   async getProfile(username: string) {

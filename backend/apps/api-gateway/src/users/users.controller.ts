@@ -9,7 +9,22 @@ export class UsersController {
   @Get('top-predictors')
   async getTopPredictors() {
     const users = await this.usersService.getTopPredictors();
-    return users.map((u) => ({ id: u._id.toString(), ...u.toObject(), _id: undefined, __v: undefined }));
+    return users.map((u) => {
+      const obj = u.toObject();
+      return { 
+        id: u._id.toString(), 
+        username: obj.username,
+        displayName: obj.displayName || obj.username || 'Người dùng',
+        avatarUrl: obj.avatarUrl,
+        avatarColor: obj.avatarColor,
+        initials: obj.initials,
+        points: obj.predictionStats?.correct || 0,
+        accuracy: obj.predictionStats?.accuracy || 0,
+        streak: obj.predictionStats?.streak || 0,
+        xp: obj.xp || 0,
+        rank: 0,
+      };
+    });
   }
 
   @Get('stats/today')

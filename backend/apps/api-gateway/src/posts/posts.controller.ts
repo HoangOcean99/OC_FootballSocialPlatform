@@ -6,10 +6,55 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 export class PostsController {
   constructor(private readonly postsService: PostsService) {}
 
+  /** Helper: map a post document to a serializable object with reactionCounts + myReaction */
+  private mapPost(p: any, userId?: string) {
+    const obj = p.toObject ? p.toObject() : { ...p };
+    const reactionsRaw = obj.reactions || {};
+
+    // Mongoose Map toObject() gives a Map instance. We must handle both Map and plain object.
+    const reactionCounts: Record<string, number> = {};
+    let myReaction: string | null = null;
+    let likesCount = 0;
+
+    if (reactionsRaw instanceof Map || (reactionsRaw && typeof reactionsRaw.forEach === 'function')) {
+      reactionsRaw.forEach((type: any, uid: any) => {
+        const t = type as string;
+        reactionCounts[t] = (reactionCounts[t] || 0) + 1;
+        if (userId && uid === userId) myReaction = t;
+        likesCount++;
+      });
+    } else if (reactionsRaw) {
+      Object.entries(reactionsRaw).forEach(([uid, type]) => {
+        const t = type as string;
+        reactionCounts[t] = (reactionCounts[t] || 0) + 1;
+        if (userId && uid === userId) myReaction = t;
+        likesCount++;
+      });
+    }
+
+    return {
+      id: p._id.toString(),
+      ...obj,
+      _id: undefined,
+      __v: undefined,
+      reactions: undefined,          // never expose raw userId map
+      likes: likesCount,
+      reactionCounts,
+      myReaction,
+      isLiked: myReaction !== null,
+    };
+  }
+
   @Get('trending')
-  async getTrendingPosts() {
+  @UseGuards(JwtAuthGuard)
+  async getTrendingPosts(@Request() req: any) {
     const posts = await this.postsService.getTrendingPosts();
-    return posts.map((p) => ({ id: p._id.toString(), ...p.toObject(), _id: undefined, __v: undefined }));
+    return posts.map((p) => this.mapPost(p, req.user.sub));
+  }
+
+  @Get(':id/reactions')
+  async getPostReactions(@Param('id') id: string) {
+    return this.postsService.getPostReactions(id);
   }
 
   @Post(':id/react')
@@ -30,34 +75,35 @@ export class PostsController {
     @Body() body: { content: string; image?: string }
   ) {
     const post = await this.postsService.createPost(communityId, req.user.sub, body.content, body.image);
-    return { id: post._id.toString(), ...post.toObject(), _id: undefined, __v: undefined };
+    return this.mapPost(post, req.user.sub);
   }
 
   @Get('community/:communityId')
-  async getCommunityPosts(@Param('communityId') communityId: string) {
+  @UseGuards(JwtAuthGuard)
+  async getCommunityPosts(@Request() req: any, @Param('communityId') communityId: string) {
     const posts = await this.postsService.getCommunityPosts(communityId);
-    return posts.map((p) => ({ id: p._id.toString(), ...p.toObject(), _id: undefined, __v: undefined }));
+    return posts.map((p) => this.mapPost(p, req.user.sub));
   }
 
   @Get('community/:communityId/pending')
   @UseGuards(JwtAuthGuard)
   async getPendingPosts(@Request() req: any, @Param('communityId') communityId: string) {
     const posts = await this.postsService.getPendingPosts(communityId, req.user.sub);
-    return posts.map((p) => ({ id: p._id.toString(), ...p.toObject(), _id: undefined, __v: undefined }));
+    return posts.map((p) => this.mapPost(p, req.user.sub));
   }
 
   @Put(':id/approve')
   @UseGuards(JwtAuthGuard)
   async approvePost(@Request() req: any, @Param('id') id: string) {
     const post = await this.postsService.approvePost(id, req.user.sub);
-    return { id: post._id.toString(), ...post.toObject(), _id: undefined, __v: undefined };
+    return this.mapPost(post, req.user.sub);
   }
 
   @Put(':id/reject')
   @UseGuards(JwtAuthGuard)
   async rejectPost(@Request() req: any, @Param('id') id: string) {
     const post = await this.postsService.rejectPost(id, req.user.sub);
-    return { id: post._id.toString(), ...post.toObject(), _id: undefined, __v: undefined };
+    return this.mapPost(post, req.user.sub);
   }
 
   @Post(':postId/comments')
@@ -98,8 +144,9 @@ export class PostsController {
   }
 
   @Get(':id')
-  async getPostById(@Param('id') id: string) {
+  @UseGuards(JwtAuthGuard)
+  async getPostById(@Request() req: any, @Param('id') id: string) {
     const post = await this.postsService.getPostById(id);
-    return { id: post._id.toString(), ...post.toObject(), _id: undefined, __v: undefined };
+    return this.mapPost(post, req.user.sub);
   }
 }

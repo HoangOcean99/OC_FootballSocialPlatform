@@ -18,6 +18,12 @@ export class PredictionMatch implements Omit<IPredMatch, 'id'> {
   @Prop({ required: true })
   awayEmoji: string;
 
+  @Prop()
+  homeLogo?: string;
+
+  @Prop()
+  awayLogo?: string;
+
   @Prop({ required: true })
   competition: string;
 
@@ -26,6 +32,24 @@ export class PredictionMatch implements Omit<IPredMatch, 'id'> {
 
   @Prop({ required: true })
   xpReward: number;
+
+  @Prop({ default: 2.0 })
+  homeOdds: number;
+
+  @Prop({ default: 3.5 })
+  drawOdds: number;
+
+  @Prop({ default: 2.5 })
+  awayOdds: number;
+
+  @Prop()
+  homeScore?: number;
+
+  @Prop()
+  awayScore?: number;
+
+  @Prop({ default: 'OPEN' })
+  status: 'OPEN' | 'CLOSED' | 'LIVE' | 'FINISHED' | 'RESOLVED';
 }
 
 export const PredictionMatchSchema = SchemaFactory.createForClass(PredictionMatch);

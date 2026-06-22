@@ -15,6 +15,20 @@ export interface User {
   levelTitle: string;
   tier?: string;
   xp: number;
+  predictionStats?: {
+    total?: number;
+    correct: number;
+    wrong?: number;
+    accuracy: number;
+    streak: number;
+    bestStreak?: number;
+    xpEarned?: number;
+  };
+  extraPredictions?: number;
+  dailyPredictionsCount?: number;
+  lastPredictionDate?: string;
+  purchasedItems?: string[];
+  activeItems?: string[];
 }
 
 export interface Team {
@@ -60,6 +74,7 @@ export interface PostAuthor {
   initials: string;
   level: number;
   levelTitle: string;
+  purchasedItems?: string[];
 }
 
 export interface PostCommunity {
@@ -81,6 +96,9 @@ export interface Post {
   isLiked: boolean;
   status?: 'PENDING' | 'APPROVED' | 'REJECTED';
   createdAt: Date;
+  // Computed reaction fields (not stored directly)
+  reactionCounts?: Record<string, number>;
+  myReaction?: string | null;
 }
 
 export interface Comment {
@@ -195,6 +213,7 @@ export interface Predictor {
   points: number;
   streak: number;
   rank: number;
+  purchasedItems?: string[];
 }
 
 export interface PredMatch {
@@ -203,9 +222,29 @@ export interface PredMatch {
   awayTeam: string;
   homeEmoji: string;
   awayEmoji: string;
+  homeLogo?: string;
+  awayLogo?: string;
   competition: string;
   kickoff: string;
-  xpReward: number;
+  xpReward: number; // Max possible or base reward
+  homeOdds?: number;
+  drawOdds?: number;
+  awayOdds?: number;
+  homeScore?: number;
+  awayScore?: number;
+  status?: 'OPEN' | 'CLOSED' | 'LIVE' | 'FINISHED' | 'RESOLVED';
+}
+
+export interface UserBet {
+  id: string;
+  userId: string;
+  matchId: string;
+  type: 'HOME_WIN' | 'DRAW' | 'AWAY_WIN' | 'EXACT_SCORE';
+  wager: number;
+  odds: number;
+  status: 'PENDING' | 'WON' | 'LOST' | 'REFUNDED';
+  predictedScore?: string; // e.g. "2-1"
+  createdAt?: string;
 }
 
 export interface StandingEntry {

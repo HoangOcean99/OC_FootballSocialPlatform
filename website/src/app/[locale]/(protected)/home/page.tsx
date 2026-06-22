@@ -5,16 +5,18 @@ import { useTranslations } from 'next-intl';
 import {
   fetchLiveMatches,
   fetchUpcomingMatches,
-  fetchTrendingPosts,
   fetchTopCommunities,
   fetchTopPredictors,
-  fetchTodayStats
+  fetchTodayStats,
+  fetchPredictionsByDate,
+  fetchMyBets
 } from '@/lib/api';
-import { Match, Post, Community, Predictor } from '@football-fan/shared-types';
+import { Match, Community, Predictor, PredMatch, UserBet } from '@football-fan/shared-types';
 
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-hot-toast';
-import ReactionButton from '@/components/ReactionButton';
+import { Target, CheckCircle2 } from 'lucide-react';
+import BetModal from '@/components/BetModal';
 
 export function formatTimeAgo(dateStr: string | Date): string {
   if (!dateStr) return 'Vừa xong';
@@ -143,128 +145,8 @@ function LiveMatchCard({ match }: { match: Match }) {
   );
 }
 
-/** Post card */
-function PostCard({ post }: { post: Post }) {
-  const router = useRouter();
-
-  function handleShare(e: React.MouseEvent) {
-    e.stopPropagation();
-    const url = `${window.location.origin}/post/${post.id}`;
-    navigator.clipboard.writeText(url).then(() => {
-      toast.success('Đã copy link bài viết');
-    }).catch(() => {
-      toast.error('Lỗi copy link');
-    });
-  }
-
-  return (
-    <article 
-      className="rounded-2xl bg-white/[0.04] border border-white/[0.08] backdrop-blur-xl p-5 hover:border-white/[0.14] hover:bg-white/[0.06] transition-all duration-300 group cursor-pointer"
-      onClick={() => router.push(`/post/${post.id}`)}
-    >
-      {/* Author row */}
-      <div className="flex items-start gap-3 mb-4" onClick={e => e.stopPropagation()}>
-        {/* Avatar */}
-        <img
-          src={post.author.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${post.author.username}`}
-          alt="Avatar"
-          className="w-10 h-10 rounded-xl border border-white/10 shrink-0 shadow-lg object-cover bg-white/5"
-        />
-
-        {/* Author info */}
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-sm font-semibold text-white">{post.author.displayName}</span>
-            {/* Level badge */}
-            <span className="px-1.5 py-0.5 rounded-md bg-emerald-400/10 border border-emerald-400/20 text-[10px] font-bold text-emerald-400">
-              Lv.{post.author.level}
-            </span>
-            <span className="text-[11px] text-gray-600">{post.author.levelTitle}</span>
-          </div>
-          <div className="flex items-center gap-1.5 mt-0.5">
-            {/* Community */}
-            <span className="text-sm">{post.community.emoji}</span>
-            <span className="text-[11px] text-emerald-500 hover:text-emerald-400 cursor-pointer transition-colors" onClick={(e) => { e.stopPropagation(); router.push(`/communities/${post.community.slug}`); }}>
-              {post.community.name}
-            </span>
-            <span className="text-gray-700">·</span>
-            <span className="text-[11px] text-gray-600">{formatTimeAgo(post.createdAt)}</span>
-          </div>
-        </div>
-
-        {/* Options */}
-        <button className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-lg hover:bg-white/[0.06] text-gray-600 hover:text-white">
-          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-            <path d="M10 6a2 2 0 110-4 2 2 0 010 4zm0 6a2 2 0 110-4 2 2 0 010 4zm0 6a2 2 0 110-4 2 2 0 010 4z" />
-          </svg>
-        </button>
-      </div>
-
-      {/* Content */}
-      <p className="text-sm text-gray-300 leading-relaxed mb-3 whitespace-pre-wrap">{post.content}</p>
-      {post.image && (
-        <div className="mb-4 rounded-xl overflow-hidden border border-white/10">
-          <img src={post.image} alt="Post image" className="w-full h-auto max-h-[500px] object-cover" />
-        </div>
-      )}
-
-      {/* Tags */}
-      {post.tags && post.tags.length > 0 && (
-        <div className="flex flex-wrap gap-1.5 mb-4">
-          {post.tags.map((tag) => (
-            <span
-              key={tag}
-              onClick={(e) => { e.stopPropagation(); }}
-              className="text-[11px] text-sky-400 hover:text-sky-300 cursor-pointer transition-colors"
-            >
-              #{tag}
-            </span>
-          ))}
-        </div>
-      )}
-
-      {/* Divider */}
-      <div className="h-px bg-white/[0.05] mb-3" />
-
-      {/* Actions */}
-      <div className="flex items-center gap-1">
-        {/* Reaction */}
-        <ReactionButton
-          postId={post.id}
-          initialCount={post.likes}
-          initialReaction={post.isLiked ? 'like' : null}
-          size="sm"
-        />
-
-        {/* Comment */}
-        <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium text-gray-500 hover:text-white hover:bg-white/[0.06] transition-all duration-200">
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-              d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-          </svg>
-          <span>{formatNumber(post.comments)}</span>
-        </button>
-
-        {/* Share */}
-        <button onClick={handleShare} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium text-gray-500 hover:text-white hover:bg-white/[0.06] transition-all duration-200">
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-              d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-          </svg>
-          <span>{formatNumber(post.shares)}</span>
-        </button>
-
-        {/* Bookmark */}
-        <button onClick={(e) => { e.stopPropagation(); }} className="ml-auto p-1.5 rounded-lg text-gray-600 hover:text-white hover:bg-white/[0.06] transition-all duration-200">
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-              d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-4-7 4V5z" />
-          </svg>
-        </button>
-      </div>
-    </article>
-  );
-}
+// Removed PostCard to save space, not needed anymore
+// Cleaned up orphaned code
 
 /** Upcoming match row */
 function UpcomingMatchRow({ match }: { match: Match }) {
@@ -365,17 +247,33 @@ function PredictorRow({ predictor }: { predictor: Predictor }) {
       </div>
 
       {/* Avatar */}
-      <div
-        className={`w-8 h-8 rounded-lg ${predictor.avatarColor} flex items-center justify-center text-xs font-bold text-white shrink-0`}
-      >
-        {predictor.initials}
+      <div className="relative shrink-0 w-8 h-8">
+        <div
+          className={`w-full h-full rounded-lg ${predictor.avatarColor} flex items-center justify-center text-xs font-bold text-white ${
+            predictor.purchasedItems?.includes('frame_dragon') ? 'ring-2 ring-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.5)]' : ''
+          }`}
+        >
+          {predictor.initials}
+        </div>
+        {predictor.purchasedItems?.includes('frame_dragon') && (
+          <div className="absolute -inset-1 border border-amber-500/50 rounded-[12px] animate-pulse pointer-events-none" />
+        )}
       </div>
 
       {/* Info */}
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-gray-300 group-hover:text-white transition-colors truncate">
-          {predictor.displayName}
-        </p>
+        <div className="flex items-center gap-1">
+          <p className={`text-sm group-hover:text-white transition-colors truncate ${
+            predictor.purchasedItems?.includes('name_vip_red')
+              ? 'text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-rose-400 drop-shadow-[0_0_8px_rgba(239,68,68,0.5)] font-bold'
+              : 'font-medium text-gray-300'
+          }`}>
+            {predictor.displayName}
+          </p>
+          {predictor.purchasedItems?.includes('badge_wizard') && (
+            <span className="text-xs drop-shadow-[0_0_8px_rgba(250,204,21,0.8)] animate-pulse" title="Huy Hiệu Phù Thuỷ Dự Đoán">🌟</span>
+          )}
+        </div>
         <div className="flex items-center gap-2 mt-0.5">
           {/* Accuracy bar */}
           <div className="flex-1 h-1 bg-white/[0.06] rounded-full overflow-hidden max-w-[60px]">
@@ -405,28 +303,51 @@ export default function HomePage() {
   const t = useTranslations('Home');
   const [activeTab, setActiveTab] = useState('all');
 
+  const router = useRouter();
   const [liveMatches, setLiveMatches] = useState<Match[]>([]);
   const [upcomingMatches, setUpcomingMatches] = useState<Match[]>([]);
-  const [trendingPosts, setTrendingPosts] = useState<Post[]>([]);
+  const [predictions, setPredictions] = useState<PredMatch[]>([]);
+  const [myBets, setMyBets] = useState<UserBet[]>([]);
   const [topCommunities, setTopCommunities] = useState<Community[]>([]);
   const [topPredictors, setTopPredictors] = useState<Predictor[]>([]);
   const [todayStats, setTodayStats] = useState({ newPosts: 0, predictionsToday: 0, onlineCount: 0 });
   const [loading, setLoading] = useState(true);
 
+  // Bet Modal State
+  const [betModalOpen, setBetModalOpen] = useState(false);
+  const [selectedMatch, setSelectedMatch] = useState<PredMatch | null>(null);
+  const [selectedType, setSelectedType] = useState<'HOME_WIN' | 'DRAW' | 'AWAY_WIN' | 'EXACT_SCORE'>('HOME_WIN');
+  const [selectedOdds, setSelectedOdds] = useState<number>(1.0);
+  const [selectedBet, setSelectedBet] = useState<UserBet | null>(null);
+
+  const openBetModal = (match: PredMatch, type: 'HOME_WIN' | 'DRAW' | 'AWAY_WIN' | 'EXACT_SCORE', odds: number, existingBet?: UserBet) => {
+    setSelectedMatch(match);
+    setSelectedType(type);
+    setSelectedOdds(odds);
+    setSelectedBet(existingBet || null);
+    setBetModalOpen(true);
+  };
+
   useEffect(() => {
     async function loadData() {
       try {
-        const [live, upcoming, posts, communities, predictors, stats] = await Promise.all([
+        const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+        const [live, upcoming, preds, bets, communities, predictors, stats] = await Promise.all([
           fetchLiveMatches(),
           fetchUpcomingMatches(),
-          fetchTrendingPosts(),
+          fetchPredictionsByDate(dateStr).catch(() => []),
+          fetchMyBets().catch(() => []),
           fetchTopCommunities(),
           fetchTopPredictors(),
           fetchTodayStats()
         ]);
         setLiveMatches(live);
         setUpcomingMatches(upcoming);
-        setTrendingPosts(posts);
+        const upcomingPreds = preds
+          .filter((p: PredMatch) => p.status === 'OPEN')
+          .sort((a: PredMatch, b: PredMatch) => new Date(a.kickoff).getTime() - new Date(b.kickoff).getTime());
+        setPredictions(upcomingPreds.slice(0, 5)); // Show top 5 upcoming predictions
+        setMyBets(bets);
         setTopCommunities(communities);
         setTopPredictors(predictors);
         if (stats) setTodayStats(stats);
@@ -500,56 +421,116 @@ export default function HomePage() {
         {/* ─── LEFT: Main Feed (60%) ─── */}
         <div className="flex-[3] min-w-0 space-y-4">
 
-          {/* Create post box */}
-          <div className="rounded-2xl bg-white/[0.04] border border-white/[0.08] backdrop-blur-xl p-4 flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-emerald-600 flex items-center justify-center text-sm font-bold text-white shrink-0">
-              FV
-            </div>
-            <button className="flex-1 text-left text-sm text-gray-600 hover:text-gray-400 transition-colors bg-white/[0.04] hover:bg-white/[0.07] rounded-xl px-4 py-2.5 border border-white/[0.06]">
-              {t('share_thoughts')}
-            </button>
-            <button className="shrink-0 px-3 py-2 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-semibold rounded-xl transition-colors">
-              {t('post_btn')}
-            </button>
-          </div>
-
-          {/* Feed Header + Tabs */}
+          {/* Feed Header */}
           <div className="flex items-center justify-between">
-            <h2 className="text-base font-bold text-white flex items-center gap-2">
-              🔥 <span>{t('trending_posts')}</span>
+            <h2 className="text-base font-bold text-emerald-400 flex items-center gap-2">
+              <Target className="w-5 h-5" /> <span>Kèo Dự Đoán HOT</span>
             </h2>
-            <div className="flex items-center gap-1 bg-white/[0.04] rounded-xl p-1 border border-white/[0.06]">
-              {FEED_TABS.map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`px-3 py-1 rounded-lg text-xs font-medium transition-all duration-200
-                    ${activeTab === tab.id
-                      ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20'
-                      : 'text-gray-500 hover:text-white'
-                    }`}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
+            <button 
+              onClick={() => router.push('/predictions')}
+              className="text-xs font-semibold text-emerald-500 bg-emerald-500/10 px-3 py-1.5 rounded-lg hover:bg-emerald-500/20 transition-colors"
+            >
+              Xem tất cả
+            </button>
           </div>
 
-          {/* Posts */}
+          {/* Predictions Feed */}
           <div className="space-y-4">
             {loading ? (
-              <div className="text-sm text-gray-400">Loading posts...</div>
+              <div className="text-sm text-gray-400">Đang tải kèo...</div>
+            ) : predictions.length === 0 ? (
+              <div className="text-center text-gray-400 py-10 bg-white/[0.02] rounded-2xl border border-white/5">
+                Chưa có kèo dự đoán nào cho hôm nay.
+              </div>
             ) : (
-              trendingPosts.map((post) => (
-                <PostCard key={post.id} post={post} />
-              ))
+              predictions.map((pred) => {
+                const myBet = myBets.find(b => b.matchId === pred.id);
+                const isFinished = pred.status !== 'OPEN';
+                return (
+                  <div key={pred.id} className="rounded-2xl bg-gradient-to-br from-[#0a111a] to-[#121b25] border border-white/[0.08] p-5 shadow-xl hover:border-emerald-500/30 transition-colors">
+                    <div className="flex justify-between items-center mb-4">
+                      <span className="text-xs font-bold text-gray-400 uppercase">{pred.competition}</span>
+                      {pred.status === 'OPEN' ? (
+                        <span className="text-[10px] font-bold text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">ĐANG MỞ</span>
+                      ) : (
+                        <span className="text-[10px] font-bold text-gray-500 bg-white/5 px-2 py-0.5 rounded-md">KẾT THÚC</span>
+                      )}
+                    </div>
+                    
+                    <div className="flex items-center justify-between gap-4 mb-4">
+                      <div className="flex-1 flex flex-col items-center gap-2">
+                        <div className="w-12 h-12 rounded-xl bg-white/5 p-2 flex items-center justify-center">
+                          {pred.homeLogo ? <img src={pred.homeLogo} alt={pred.homeTeam} className="w-full h-full object-contain" /> : <span className="text-2xl">{pred.homeEmoji}</span>}
+                        </div>
+                        <span className="text-sm font-bold text-white text-center line-clamp-1">{pred.homeTeam}</span>
+                      </div>
+                      
+                      <div className="flex flex-col items-center justify-center">
+                        <span className="text-xs text-gray-500 mb-1">vs</span>
+                        <span className="text-xs font-bold text-emerald-400">
+                          {new Date(pred.kickoff).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })} - {new Date(pred.kickoff).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      </div>
+
+                      <div className="flex-1 flex flex-col items-center gap-2">
+                        <div className="w-12 h-12 rounded-xl bg-white/5 p-2 flex items-center justify-center">
+                          {pred.awayLogo ? <img src={pred.awayLogo} alt={pred.awayTeam} className="w-full h-full object-contain" /> : <span className="text-2xl">{pred.awayEmoji}</span>}
+                        </div>
+                        <span className="text-sm font-bold text-white text-center line-clamp-1">{pred.awayTeam}</span>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-2">
+                      <button 
+                        onClick={() => openBetModal(pred, 'HOME_WIN', pred.homeOdds || 2.0, myBet)}
+                        disabled={isFinished}
+                        className={`py-2 rounded-xl border text-xs font-bold transition-colors flex justify-center items-center gap-1
+                          ${myBet?.type === 'HOME_WIN' ? 'bg-amber-500 text-amber-950 border-amber-400' : 
+                            isFinished ? 'bg-white/5 border-transparent text-gray-600' : 'bg-white/5 border-white/10 hover:bg-white/10 text-gray-300'}`}
+                      >
+                        Thắng {myBet?.type === 'HOME_WIN' ? <CheckCircle2 className="w-3 h-3" /> : `(${pred.homeOdds?.toFixed(2)})`}
+                      </button>
+                      <button 
+                        onClick={() => openBetModal(pred, 'DRAW', pred.drawOdds || 3.0, myBet)}
+                        disabled={isFinished}
+                        className={`py-2 rounded-xl border text-xs font-bold transition-colors flex justify-center items-center gap-1
+                          ${myBet?.type === 'DRAW' ? 'bg-amber-500 text-amber-950 border-amber-400' : 
+                            isFinished ? 'bg-white/5 border-transparent text-gray-600' : 'bg-white/5 border-white/10 hover:bg-white/10 text-gray-300'}`}
+                      >
+                        Hòa {myBet?.type === 'DRAW' ? <CheckCircle2 className="w-3 h-3" /> : `(${pred.drawOdds?.toFixed(2)})`}
+                      </button>
+                      <button 
+                        onClick={() => openBetModal(pred, 'AWAY_WIN', pred.awayOdds || 2.5, myBet)}
+                        disabled={isFinished}
+                        className={`py-2 rounded-xl border text-xs font-bold transition-colors flex justify-center items-center gap-1
+                          ${myBet?.type === 'AWAY_WIN' ? 'bg-amber-500 text-amber-950 border-amber-400' : 
+                            isFinished ? 'bg-white/5 border-transparent text-gray-600' : 'bg-white/5 border-white/10 hover:bg-white/10 text-gray-300'}`}
+                      >
+                        Thắng {myBet?.type === 'AWAY_WIN' ? <CheckCircle2 className="w-3 h-3" /> : `(${pred.awayOdds?.toFixed(2)})`}
+                      </button>
+                    </div>
+                  </div>
+                );
+              })
             )}
           </div>
-
-          {/* Load more */}
-          <button className="w-full py-3 rounded-2xl border border-white/[0.08] text-sm text-gray-500 hover:text-white hover:bg-white/[0.04] hover:border-white/[0.14] transition-all duration-200 font-medium">
-            {t('load_more_posts')}
+          <button onClick={() => router.push('/predictions')} className="w-full py-3 rounded-2xl border border-white/[0.08] text-sm text-gray-500 hover:text-white hover:bg-white/[0.04] hover:border-white/[0.14] transition-all duration-200 font-medium">
+            Khám phá thêm kèo
           </button>
+
+          {betModalOpen && selectedMatch && (
+            <BetModal
+              isOpen={betModalOpen}
+              onClose={() => setBetModalOpen(false)}
+              match={selectedMatch}
+              selectedType={selectedType}
+              odds={selectedOdds}
+              existingBet={selectedBet || undefined}
+              onSuccess={(newXp) => {
+                fetchMyBets().then(setMyBets);
+              }}
+            />
+          )}
         </div>
 
         {/* ─── RIGHT: Sidebar (40%) ─── */}

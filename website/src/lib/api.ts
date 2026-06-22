@@ -37,6 +37,11 @@ export const fetchPostById = async (id: string) => {
   return data;
 };
 
+export const fetchPostReactions = async (id: string) => {
+  const { data } = await api.get(`/posts/${id}/reactions`);
+  return data;
+};
+
 export const fetchTopCommunities = async () => {
   const { data } = await api.get('/communities/top');
   return data;
@@ -57,6 +62,16 @@ export const fetchUserProfile = async (username: string) => {
   return data;
 };
 
+export const fetchShopItems = async () => {
+  const { data } = await api.get('/shop/items');
+  return data;
+};
+
+export const buyShopItem = async (itemId: string) => {
+  const { data } = await api.post(`/shop/buy/${itemId}`);
+  return data;
+};
+
 export const fetchAllCommunities = async () => {
   const { data } = await api.get('/communities');
   return data;
@@ -64,6 +79,21 @@ export const fetchAllCommunities = async () => {
 
 export const fetchActivePredictions = async () => {
   const { data } = await api.get('/predictions/active');
+  return data;
+};
+
+export const fetchPredictionsByDate = async (dateStr: string) => {
+  const { data } = await api.get(`/predictions/date/${dateStr}`);
+  return data;
+};
+
+export const fetchMyBets = async () => {
+  const { data } = await api.get('/predictions/my-bets');
+  return data;
+};
+
+export const placeBet = async (matchId: string, type: string, wager: number) => {
+  const { data } = await api.post(`/predictions/${matchId}/bet`, { type, wager });
   return data;
 };
 

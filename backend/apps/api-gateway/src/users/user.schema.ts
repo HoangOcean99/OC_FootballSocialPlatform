@@ -48,8 +48,23 @@ export class User implements Omit<IUserProfile, 'id'> {
   @Prop({ default: 'Thành viên mới' })
   levelTitle: string;
 
-  @Prop({ default: 0 })
+  @Prop({ default: 500 })
   xp: number;
+
+  @Prop({ default: 0 })
+  extraPredictions: number;
+
+  @Prop({ default: 0 })
+  dailyPredictionsCount: number;
+
+  @Prop({ default: '' })
+  lastPredictionDate: string;
+
+  @Prop({ type: [String], default: [] })
+  purchasedItems: string[];
+
+  @Prop({ type: [String], default: [] })
+  activeItems: string[];
 
   @Prop({ default: () => new Date().toLocaleDateString('vi-VN', { month: 'long', year: 'numeric' }) })
   joinDate: string;

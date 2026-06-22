@@ -173,18 +173,32 @@ export default function Sidebar() {
             onlineFriends.map((friend) => (
               <li key={friend.id}>
                 <Link href={`/profile/${friend.username}`} className="w-full flex items-center gap-2.5 px-2 py-2 rounded-lg hover:bg-white/[0.06] transition-all duration-150 group text-left">
-                  <div className="relative shrink-0">
+                  <div className="relative shrink-0 w-7 h-7">
                     <div
-                      className={`w-7 h-7 rounded-full bg-emerald-600 flex items-center justify-center text-[11px] font-bold text-white`}
+                      className={`w-full h-full rounded-full flex items-center justify-center text-[11px] font-bold text-white overflow-hidden ${
+                        friend.purchasedItems?.includes('frame_dragon') ? 'border border-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)] bg-emerald-600' : 'bg-emerald-600'
+                      }`}
                     >
-                      {friend.initials || friend.username?.charAt(0).toUpperCase()}
+                      {friend.avatarUrl ? <img src={friend.avatarUrl} alt="" className="w-full h-full object-cover" /> : friend.initials || friend.username?.charAt(0).toUpperCase()}
                     </div>
+                    {friend.purchasedItems?.includes('frame_dragon') && (
+                      <div className="absolute -inset-1 border border-amber-500/50 rounded-full animate-pulse pointer-events-none" />
+                    )}
                     <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-400 rounded-full border-2 border-[#080d14]" />
                   </div>
-                  <div className="min-w-0">
-                    <p className="text-sm text-gray-300 group-hover:text-white truncate transition-colors">
-                      {friend.displayName || friend.username}
-                    </p>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1">
+                      <p className={`text-sm group-hover:text-white truncate transition-colors ${
+                        friend.purchasedItems?.includes('name_vip_red')
+                          ? 'text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-rose-400 drop-shadow-[0_0_8px_rgba(239,68,68,0.5)] font-bold'
+                          : 'text-gray-300'
+                      }`}>
+                        {friend.displayName || friend.username}
+                      </p>
+                      {friend.purchasedItems?.includes('badge_wizard') && (
+                        <span className="text-xs drop-shadow-[0_0_8px_rgba(250,204,21,0.8)] animate-pulse" title="Huy Hiệu Phù Thuỷ Dự Đoán">🌟</span>
+                      )}
+                    </div>
                     <p className="text-[10px] text-gray-500 truncate">Online</p>
                   </div>
                 </Link>

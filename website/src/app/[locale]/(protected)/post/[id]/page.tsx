@@ -8,7 +8,7 @@ import { fetchPostById, fetchPostComments, fetchCommunityDetails, createComment,
 import { Post, Comment, Community } from '@football-fan/shared-types';
 import { useAuthStore } from '@/store/useAuthStore';
 import { toast } from 'react-hot-toast';
-import ReactionButton from '@/components/ReactionButton';
+import PostActions from '@/components/PostActions';
 import { io, Socket } from 'socket.io-client';
 
 export function formatTimeAgo(dateStr: string | Date): string {
@@ -232,11 +232,33 @@ export default function PostDetailPage() {
     return commentsList.map(comment => (
       <div key={comment.id} className="mt-3 first:mt-0">
         <div className="flex gap-3">
-          <img src={comment.author.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${comment.author.username}`} alt="Avatar" className="w-8 h-8 rounded-full shrink-0 border border-white/10" />
+          <div className="relative shrink-0 w-8 h-8">
+            <img 
+              src={comment.author.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${comment.author.username}`} 
+              alt="Avatar" 
+              className={`w-full h-full rounded-full border border-white/10 ${
+                comment.author.purchasedItems?.includes('frame_dragon') ? 'border-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.5)]' : ''
+              }`} 
+            />
+            {comment.author.purchasedItems?.includes('frame_dragon') && (
+              <div className="absolute -inset-1 border border-amber-500/50 rounded-full animate-pulse pointer-events-none" />
+            )}
+          </div>
           <div className="flex-1">
             <div className="bg-white/5 rounded-2xl p-3 inline-block min-w-[120px]">
-              <span className="font-bold text-white text-sm">{comment.author.displayName}</span>
-              {comment.content && <p className="text-gray-200 text-sm mt-0.5 whitespace-pre-wrap">{comment.content}</p>}
+              <div className="flex items-center gap-1.5 mb-0.5">
+                <span className={`font-bold text-sm ${
+                  comment.author.purchasedItems?.includes('name_vip_red')
+                    ? 'text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-rose-400 drop-shadow-[0_0_8px_rgba(239,68,68,0.5)] tracking-wide'
+                    : 'text-white'
+                }`}>
+                  {comment.author.displayName}
+                </span>
+                {comment.author.purchasedItems?.includes('badge_wizard') && (
+                  <span className="text-xs drop-shadow-[0_0_8px_rgba(250,204,21,0.8)] animate-pulse" title="Huy Hiệu Phù Thuỷ Dự Đoán">🌟</span>
+                )}
+              </div>
+              {comment.content && <p className="text-gray-200 text-sm whitespace-pre-wrap">{comment.content}</p>}
               {comment.image && (
                 <div className="mt-2 rounded-xl overflow-hidden border border-white/10 max-w-[250px]">
                   <img src={comment.image} alt="Comment attachment" className="w-full h-auto object-contain bg-black/20" />
@@ -344,16 +366,32 @@ export default function PostDetailPage() {
         <article className="rounded-2xl bg-white/[0.04] border border-white/[0.08] backdrop-blur-xl p-5">
           {/* Header */}
           <div className="flex items-start gap-3 mb-4">
-            <img 
-              src={post.author.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${post.author.username}`} 
-              alt="Avatar" 
-              className="w-10 h-10 rounded-full border border-white/10 shrink-0" 
-            />
+            <div className="relative shrink-0 w-10 h-10">
+              <img 
+                src={post.author.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${post.author.username}`} 
+                alt="Avatar" 
+                className={`w-full h-full rounded-full border border-white/10 ${
+                  post.author.purchasedItems?.includes('frame_dragon') ? 'border-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.5)]' : ''
+                }`} 
+              />
+              {post.author.purchasedItems?.includes('frame_dragon') && (
+                <div className="absolute -inset-1.5 border-2 border-amber-500/50 rounded-full animate-pulse pointer-events-none" />
+              )}
+            </div>
             <div className="flex-1 min-w-0">
               <div className="flex justify-between items-start">
                 <div>
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-bold text-white">{post.author.displayName}</span>
+                    <span className={`font-bold ${
+                      post.author.purchasedItems?.includes('name_vip_red')
+                        ? 'text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-rose-400 drop-shadow-[0_0_8px_rgba(239,68,68,0.5)] tracking-wide'
+                        : 'text-white'
+                    }`}>
+                      {post.author.displayName}
+                    </span>
+                    {post.author.purchasedItems?.includes('badge_wizard') && (
+                      <span className="text-sm drop-shadow-[0_0_8px_rgba(250,204,21,0.8)] animate-pulse" title="Huy Hiệu Phù Thuỷ Dự Đoán">🌟</span>
+                    )}
                     <span className="bg-white/10 text-gray-300 text-xs px-2 py-0.5 rounded-full">{post.author.levelTitle}</span>
                   </div>
                   <div className="flex items-center gap-1.5 mt-0.5">
@@ -391,24 +429,31 @@ export default function PostDetailPage() {
             </div>
           )}
 
-          {/* Actions */}
-          <div className="h-px bg-white/[0.05] mb-3" />
-          <div className="flex items-center gap-4 text-sm text-gray-500 font-medium">
-            <ReactionButton
-              postId={post.id}
-              initialCount={post.likes}
-              initialReaction={post.isLiked ? 'like' : null}
-            />
-            <div className="flex items-center gap-2 py-1 text-emerald-500">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
-              {post.comments}
+          {/* Actions - Facebook style (includes summary row + buttons) */}
+          <PostActions
+            postId={post.id}
+            initialCount={post.likes}
+            initialReaction={post.myReaction ?? (post.isLiked ? 'like' : null)}
+            initialReactionCounts={post.reactionCounts ?? {}}
+          >
+            {/* Comment count */}
+            <div className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-emerald-500">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+              </svg>
+              <span>{post.comments}</span>
             </div>
-            <button onClick={sharePost} className="flex items-center gap-2 hover:text-white transition-colors py-1 ml-auto">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" /></svg>
+            {/* Share */}
+            <button
+              onClick={sharePost}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold text-gray-400 hover:text-gray-200 hover:bg-white/[0.08] transition-all duration-200 ml-auto"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+              </svg>
               Chia sẻ
             </button>
-          </div>
-          <div className="h-px bg-white/[0.05] mt-3" />
+          </PostActions>
 
           {/* Comments Section */}
           <div className="pt-4">

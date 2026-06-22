@@ -122,13 +122,18 @@ export default function ProfilePage() {
           <div className="flex flex-col sm:flex-row sm:items-end gap-5 -mt-16 mb-6">
             {/* Avatar */}
             <div className="relative">
-              <div className="w-28 h-28 rounded-2xl bg-gradient-to-br from-emerald-400 to-green-600 ring-4 ring-emerald-500/50 ring-offset-4 ring-offset-[#080d14] flex items-center justify-center shadow-2xl shadow-emerald-500/30 overflow-hidden">
+              <div className={`w-28 h-28 rounded-2xl bg-gradient-to-br from-emerald-400 to-green-600 ring-4 ring-offset-4 ring-offset-[#080d14] flex items-center justify-center overflow-hidden ${
+                u.purchasedItems?.includes('frame_dragon') ? 'ring-amber-500/80 shadow-[0_0_30px_rgba(245,158,11,0.5)]' : 'ring-emerald-500/50 shadow-2xl shadow-emerald-500/30'
+              }`}>
                 {user?.avatarUrl ? (
                   <img src={user.avatarUrl} alt="Avatar" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                 ) : (
                   <span className="text-4xl font-black text-white">{displayInitials}</span>
                 )}
               </div>
+              {u.purchasedItems?.includes('frame_dragon') && (
+                <div className="absolute -inset-2 border-4 border-amber-500/50 rounded-[24px] animate-pulse pointer-events-none" />
+              )}
               {/* Online dot */}
               <span className="absolute bottom-1.5 right-1.5 w-4 h-4 bg-emerald-400 border-2 border-[#080d14] rounded-full" />
             </div>
@@ -136,7 +141,16 @@ export default function ProfilePage() {
             {/* Name & badge */}
             <div className="flex-1 pb-1">
               <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mb-2">
-                <h1 className="text-2xl sm:text-3xl font-black text-white">{displayName}</h1>
+                <h1 className={`text-2xl sm:text-3xl font-black ${
+                  u.purchasedItems?.includes('name_vip_red')
+                    ? 'text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-rose-400 drop-shadow-[0_0_12px_rgba(239,68,68,0.5)] tracking-wide'
+                    : 'text-white'
+                }`}>
+                  {displayName}
+                </h1>
+                {u.purchasedItems?.includes('badge_wizard') && (
+                  <span className="text-2xl drop-shadow-[0_0_10px_rgba(250,204,21,0.8)] animate-pulse" title="Huy Hiệu Phù Thuỷ Dự Đoán">🌟</span>
+                )}
                 {u.role === 'ADMIN' && (
                   <span className="text-xs px-2.5 py-0.5 bg-rose-500/20 border border-rose-500/30 text-rose-400 font-bold rounded-full">
                     ADMIN

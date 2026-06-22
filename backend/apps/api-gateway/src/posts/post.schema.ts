@@ -7,7 +7,7 @@ export type ReactionType = 'like' | 'love' | 'haha' | 'wow' | 'sad' | 'angry';
 export type PostDocument = Post & Document;
 
 @Schema({ timestamps: true })
-export class Post implements Omit<IPost, 'id'> {
+export class Post implements Omit<IPost, 'id' | 'reactionCounts' | 'myReaction'> {
   @Prop({ type: Object, required: true })
   author: PostAuthor;
 

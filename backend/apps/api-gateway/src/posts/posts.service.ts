@@ -58,7 +58,32 @@ export class PostsService {
     };
   }
 
-  private countReactions(reactions: Map<string, string>) {
+  async getPostReactions(postId: string) {
+    const post = await this.postModel.findById(postId).exec();
+    if (!post) throw new NotFoundException('Post not found');
+
+    const reactionsMap = post.reactions || new Map<string, string>();
+    const userIds = Array.from(reactionsMap.keys());
+    
+    if (userIds.length === 0) return [];
+
+    const users = await this.usersService.findUsersByIds(userIds);
+    return users.map(u => {
+      const uid = u._id.toString();
+      return {
+        id: uid,
+        username: u.username,
+        displayName: u.displayName || u.username,
+        avatarUrl: u.avatarUrl,
+        avatarColor: u.avatarColor,
+        initials: u.initials,
+        reaction: reactionsMap.get(uid),
+        purchasedItems: u.purchasedItems || [],
+      };
+    });
+  }
+
+  private countReactions(reactions: Map<string, string>): Record<string, number> {
     const counts: Record<string, number> = {};
     reactions.forEach((type) => {
       counts[type] = (counts[type] || 0) + 1;
@@ -90,7 +115,8 @@ export class PostsService {
         avatarColor: user.avatarColor || '#3b82f6',
         initials: user.initials || user.username.substring(0, 2).toUpperCase(),
         level: user.level || 1,
-        levelTitle: user.levelTitle || 'Tân binh'
+        levelTitle: user.levelTitle || 'Tân binh',
+        purchasedItems: user.purchasedItems || [],
       },
       community: {
         name: community.name,
@@ -195,7 +221,8 @@ export class PostsService {
         avatarColor: user.avatarColor || '#3b82f6',
         initials: user.initials || user.username.substring(0, 2).toUpperCase(),
         level: user.level || 1,
-        levelTitle: user.levelTitle || 'Tân binh'
+        levelTitle: user.levelTitle || 'Tân binh',
+        purchasedItems: user.purchasedItems || []
       },
       content,
       image,

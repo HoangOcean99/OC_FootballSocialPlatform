@@ -4,7 +4,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { Users, Shield, MessageSquare, TrendingUp, ArrowLeft, MoreHorizontal, Image as ImageIcon, Send, Plus, Edit2, Trash2, X, MapPin, Globe, MessageCircle, FileText, Link, Settings, LogOut, Share } from 'lucide-react';
 import { fetchCommunityDetails, joinCommunity, leaveCommunity, deleteCommunity, updateCommunity, checkCommunityName, uploadImage, fetchCommunityRequests, approveCommunityRequest, rejectCommunityRequest, fetchCommunityMembers, kickCommunityMember, fetchUserProfile, inviteCommunityMember, searchUsers, promoteCommunityAdmin, acceptCommunityAdminInvite, rejectCommunityAdminInvite, resignCommunityAdmin, createPost, fetchCommunityPosts, fetchPendingPosts, approvePost, rejectPost, createComment, fetchPostComments, deletePost, deleteComment } from '@/lib/api';
 import { Community, UserProfile, Post, Comment } from '@football-fan/shared-types';
-import ReactionButton from '@/components/ReactionButton';
+import PostActions from '@/components/PostActions';
 
 export function formatTimeAgo(dateStr: string | Date): string {
   if (!dateStr) return 'Vừa xong';
@@ -486,11 +486,33 @@ export default function CommunityDetailPage() {
     return commentsList.map(comment => (
       <div key={comment.id} className="mt-3 first:mt-0">
         <div className="flex gap-3">
-          <img src={comment.author.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${comment.author.username}`} alt="Avatar" className="w-8 h-8 rounded-full shrink-0 border border-white/10" />
+          <div className="relative shrink-0 w-8 h-8">
+            <img 
+              src={comment.author.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${comment.author.username}`} 
+              alt="Avatar" 
+              className={`w-full h-full rounded-full border border-white/10 ${
+                comment.author.purchasedItems?.includes('frame_dragon') ? 'border-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.5)]' : ''
+              }`} 
+            />
+            {comment.author.purchasedItems?.includes('frame_dragon') && (
+              <div className="absolute -inset-1 border border-amber-500/50 rounded-full animate-pulse pointer-events-none" />
+            )}
+          </div>
           <div className="flex-1">
             <div className="bg-white/5 rounded-2xl p-3 inline-block min-w-[120px]">
-              <span className="font-bold text-white text-sm">{comment.author.displayName}</span>
-              {comment.content && <p className="text-gray-200 text-sm mt-0.5 whitespace-pre-wrap">{comment.content}</p>}
+              <div className="flex items-center gap-1.5 mb-0.5">
+                <span className={`font-bold text-sm ${
+                  comment.author.purchasedItems?.includes('name_vip_red')
+                    ? 'text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-rose-400 drop-shadow-[0_0_8px_rgba(239,68,68,0.5)] tracking-wide'
+                    : 'text-white'
+                }`}>
+                  {comment.author.displayName}
+                </span>
+                {comment.author.purchasedItems?.includes('badge_wizard') && (
+                  <span className="text-xs drop-shadow-[0_0_8px_rgba(250,204,21,0.8)] animate-pulse" title="Huy Hiệu Phù Thuỷ Dự Đoán">🌟</span>
+                )}
+              </div>
+              {comment.content && <p className="text-gray-200 text-sm whitespace-pre-wrap">{comment.content}</p>}
               {comment.image && (
                 <div className="mt-2 rounded-xl overflow-hidden border border-white/10 max-w-[250px]">
                   <img src={comment.image} alt="Comment attachment" className="w-full h-auto object-contain bg-black/20" />
@@ -962,7 +984,7 @@ export default function CommunityDetailPage() {
                 {isAdmin ? (
                   <div className="flex items-center gap-2">
                     <span className="flex items-center gap-2 bg-blue-500/10 text-blue-400 border border-blue-500/20 px-6 py-2.5 rounded-xl font-bold">
-                      <Settings className="w-5 h-5" /> Quản trị viên
+                      Quản trị viên
                     </span>
                     <button 
                       onClick={() => setIsAdminModalOpen(true)}
@@ -1066,8 +1088,14 @@ export default function CommunityDetailPage() {
           <div className="bg-[#0f1923] border border-white/[0.05] rounded-3xl p-4 shadow-xl">
             <form onSubmit={handleCreatePost}>
               <div className="flex gap-4">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={user?.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.username}`} alt="Avatar" className="w-12 h-12 rounded-full shrink-0 border border-white/10" />
+                <div className="relative shrink-0 w-12 h-12">
+                  <img src={user?.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.username}`} alt="Avatar" className={`w-full h-full rounded-full border border-white/10 ${
+                    user?.purchasedItems?.includes('frame_dragon') ? 'border-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.5)]' : ''
+                  }`} />
+                  {user?.purchasedItems?.includes('frame_dragon') && (
+                    <div className="absolute -inset-1 border-2 border-amber-500/50 rounded-full animate-pulse pointer-events-none" />
+                  )}
+                </div>
                 <div className="flex-1">
                   <textarea 
                     value={postContent}
@@ -1134,10 +1162,26 @@ export default function CommunityDetailPage() {
                   {/* Post Header */}
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center gap-3">
-                      <img src={post.author.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${post.author.username}`} alt="Avatar" className="w-10 h-10 rounded-full border border-white/10" />
+                      <div className="relative shrink-0 w-10 h-10">
+                        <img src={post.author.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${post.author.username}`} alt="Avatar" className={`w-full h-full rounded-full border border-white/10 ${
+                          post.author.purchasedItems?.includes('frame_dragon') ? 'border-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.5)]' : ''
+                        }`} />
+                        {post.author.purchasedItems?.includes('frame_dragon') && (
+                          <div className="absolute -inset-1 border-2 border-amber-500/50 rounded-full animate-pulse pointer-events-none" />
+                        )}
+                      </div>
                       <div>
-                        <div className="font-bold text-white flex items-center gap-2">
-                          {post.author.displayName}
+                        <div className="font-bold flex items-center gap-2 flex-wrap">
+                          <span className={`text-sm ${
+                            post.author.purchasedItems?.includes('name_vip_red')
+                              ? 'text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-rose-400 drop-shadow-[0_0_8px_rgba(239,68,68,0.5)] tracking-wide'
+                              : 'text-white'
+                          }`}>
+                            {post.author.displayName}
+                          </span>
+                          {post.author.purchasedItems?.includes('badge_wizard') && (
+                            <span className="text-sm drop-shadow-[0_0_8px_rgba(250,204,21,0.8)] animate-pulse" title="Huy Hiệu Phù Thuỷ Dự Đoán">🌟</span>
+                          )}
                           <span className="bg-white/10 text-gray-300 text-[10px] px-2 py-0.5 rounded-full">{post.author.levelTitle}</span>
                         </div>
                         <div className="text-xs text-gray-500">{formatTimeAgo(post.createdAt)}</div>
@@ -1166,14 +1210,15 @@ export default function CommunityDetailPage() {
                     )}
                   </div>
 
-                  {/* Actions */}
-                  <div className="flex items-center gap-4 py-3 border-y border-white/5 text-gray-400">
-                    <ReactionButton
-                      postId={post.id}
-                      initialCount={post.likes}
-                      initialReaction={post.isLiked ? 'like' : null}
-                    />
-                    <button 
+                  {/* Actions - Facebook style */}
+                  <PostActions
+                    postId={post.id}
+                    initialCount={post.likes}
+                    initialReaction={post.myReaction ?? (post.isLiked ? 'like' : null)}
+                    initialReactionCounts={post.reactionCounts ?? {}}
+                  >
+                    {/* Comment toggle */}
+                    <button
                       onClick={() => {
                         if (activeCommentsPostId === post.id) {
                           setActiveCommentsPostId(null);
@@ -1182,26 +1227,25 @@ export default function CommunityDetailPage() {
                           if (!commentsMap[post.id]) loadComments(post.id);
                         }
                       }}
-                      className={`flex items-center gap-2 hover:text-blue-400 transition-colors ${activeCommentsPostId === post.id ? 'text-blue-400' : ''}`}
+                      className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 hover:bg-white/[0.08] ${
+                        activeCommentsPostId === post.id ? 'text-blue-400' : 'text-gray-400 hover:text-gray-200'
+                      }`}
                     >
                       <MessageCircle className="w-5 h-5" />
-                      <span className="font-medium">{post.comments}</span>
+                      <span>{post.comments}</span>
                     </button>
-                    <button 
+                    {/* Share */}
+                    <button
                       onClick={() => {
                         const url = `${window.location.origin}/post/${post.id}`;
-                        navigator.clipboard.writeText(url).then(() => {
-                          toast.success('Đã copy link bài viết');
-                        }).catch(() => {
-                          toast.error('Lỗi copy link');
-                        });
+                        navigator.clipboard.writeText(url).then(() => toast.success('Đã copy link bài viết')).catch(() => toast.error('Lỗi copy link'));
                       }}
-                      className="flex items-center gap-2 hover:text-white transition-colors ml-auto"
+                      className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold text-gray-400 hover:text-gray-200 hover:bg-white/[0.08] transition-all duration-200 ml-auto"
                     >
-                      <Share className="w-5 h-5" />
-                      <span className="font-medium hidden sm:inline">Chia sẻ</span>
+                      <Share className="w-4 h-4" />
+                      <span className="hidden sm:inline">Chia sẻ</span>
                     </button>
-                  </div>
+                  </PostActions>
 
                   {/* Comments Section */}
                   <AnimatePresence>
@@ -1217,7 +1261,14 @@ export default function CommunityDetailPage() {
                           {isJoined && (
                             <div className="flex flex-col gap-2 mb-6">
                               <div className="flex gap-3">
-                                <img src={user?.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.username}`} alt="Avatar" className="w-8 h-8 rounded-full border border-white/10" />
+                                <div className="relative shrink-0 w-8 h-8">
+                                  <img src={user?.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.username}`} alt="Avatar" className={`w-full h-full rounded-full border border-white/10 ${
+                                    user?.purchasedItems?.includes('frame_dragon') ? 'border-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.5)]' : ''
+                                  }`} />
+                                  {user?.purchasedItems?.includes('frame_dragon') && (
+                                    <div className="absolute -inset-1 border border-amber-500/50 rounded-full animate-pulse pointer-events-none" />
+                                  )}
+                                </div>
                                 <div className="flex-1 flex gap-2 items-center">
                                   <label className="cursor-pointer p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-full transition-colors flex items-center justify-center">
                                     <ImageIcon className="w-5 h-5" />
