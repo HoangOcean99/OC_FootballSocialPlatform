@@ -199,6 +199,9 @@ export interface UserProfile extends User {
   }[];
   joinedCommunities: string[];
   communityEmojis: string[];
+  followersCount?: number;
+  followingCount?: number;
+  isFollowing?: boolean;
 }
 
 export interface Predictor {
@@ -265,4 +268,36 @@ export interface StandingEntry {
   points: number;
   form?: string;
   description?: string;
+}
+
+export interface ChatMessage {
+  id: string;
+  communityId: string;
+  author: {
+    id: string;
+    username: string;
+    displayName: string;
+    avatarUrl?: string;
+    purchasedItems?: string[];
+  };
+  content?: string;
+  imageUrl?: string;
+  createdAt: Date;
+}
+
+export type NotificationType = 'POST_LIKE' | 'POST_COMMENT' | 'COMMENT_REPLY' | 'COMMUNITY_JOIN_APPROVED' | 'FRIEND_REQUEST' | 'FRIEND_ACCEPTED' | 'SYSTEM';
+
+export interface AppNotification {
+  id: string;
+  recipientId: string;
+  sender?: {
+    id: string;
+    username: string;
+    avatarUrl?: string;
+  };
+  type: NotificationType;
+  content: string;
+  link?: string;
+  isRead: boolean;
+  createdAt: string;
 }

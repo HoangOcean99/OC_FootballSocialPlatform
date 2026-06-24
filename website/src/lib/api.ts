@@ -92,6 +92,11 @@ export const fetchMyBets = async () => {
   return data;
 };
 
+export const fetchBetById = async (id: string) => {
+  const { data } = await api.get(`/predictions/my-bets/${id}`);
+  return data;
+};
+
 export const placeBet = async (matchId: string, type: string, wager: number) => {
   const { data } = await api.post(`/predictions/${matchId}/bet`, { type, wager });
   return data;
@@ -122,6 +127,34 @@ export const fetchTodayStats = async () => {
   const { data } = await api.get('/users/stats/today');
   return data;
 };
+
+// Follow System
+export const followUser = async (userId: string) => {
+  const { data } = await api.post(`/users/${userId}/follow`);
+  return data;
+};
+
+export const unfollowUser = async (userId: string) => {
+  const { data } = await api.delete(`/users/${userId}/follow`);
+  return data;
+};
+
+export const fetchFollowers = async () => {
+  const { data } = await api.get('/users/me/followers');
+  return data;
+};
+
+export const fetchFollowing = async () => {
+  const { data } = await api.get('/users/me/following');
+  return data;
+};
+
+export const fetchSuggestedUsers = async () => {
+  const { data } = await api.get('/users/me/suggestions');
+  return data;
+};
+
+
 
 export const fetchMatchDetails = async (id: string, lang?: string) => {
   const url = lang ? `/matches/${id}/details?lang=${lang}` : `/matches/${id}/details`;
@@ -325,5 +358,38 @@ export const fetchPostComments = async (postId: string) => {
 
 export const deleteComment = async (commentId: string) => {
   const { data } = await api.delete(`/posts/comments/${commentId}`);
+  return data;
+};
+
+// Chat
+export const fetchCommunityMessages = async (communityId: string, limit?: number) => {
+  const url = limit ? `/communities/${communityId}/messages?limit=${limit}` : `/communities/${communityId}/messages`;
+  const { data } = await api.get(url);
+  return data;
+};
+
+export const sendCommunityMessage = async (communityId: string, content: string, imageUrl?: string) => {
+  const { data } = await api.post(`/communities/${communityId}/messages`, { content, imageUrl });
+  return data;
+};
+
+// Private Messaging (Inbox)
+export const fetchConversations = async () => {
+  const { data } = await api.get('/messages/conversations');
+  return data;
+};
+
+export const fetchPrivateMessages = async (targetUserId: string) => {
+  const { data } = await api.get(`/messages/conversations/${targetUserId}`);
+  return data;
+};
+
+export const sendPrivateMessage = async (targetUserId: string, content: string, imageUrl?: string) => {
+  const { data } = await api.post(`/messages/conversations/${targetUserId}`, { content, imageUrl });
+  return data;
+};
+
+export const markConversationAsRead = async (conversationId: string) => {
+  const { data } = await api.put(`/messages/conversations/${conversationId}/read`);
   return data;
 };

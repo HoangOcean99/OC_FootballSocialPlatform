@@ -3,6 +3,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Community, CommunityDocument } from './community.schema';
 import { User, UserDocument } from '../users/user.schema';
+import { ChatMessage, ChatMessageDocument } from './chat-message.schema';
 import { UploadService } from '../upload/upload.service';
 import { EventsGateway } from '../websockets/events.gateway';
 
@@ -11,6 +12,7 @@ export class CommunitiesService {
   constructor(
     @InjectModel(Community.name) private communityModel: Model<CommunityDocument>,
     @InjectModel(User.name) private userModel: Model<UserDocument>,
+    @InjectModel(ChatMessage.name) private chatMessageModel: Model<ChatMessageDocument>,
     private readonly uploadService: UploadService,
     private readonly eventsGateway: EventsGateway,
   ) {}
@@ -516,5 +518,38 @@ export class CommunitiesService {
 
     await community.save();
     return { success: true };
+  }
+
+  async getCommunityMessages(communityId: string, limit: number = 50) {
+    const messages = await this.chatMessageModel.find({ communityId })
+      .sort({ createdAt: -1 })
+      .limit(limit)
+      .exec();
+    return messages.reverse().map(m => ({ id: m._id.toString(), ...m.toObject(), _id: undefined, __v: undefined }));
+  }
+
+  async saveChatMessage(communityId: string, authorId: string, content: string, imageUrl?: string) {
+    const user = await this.userModel.findById(authorId).exec();
+    if (!user) throw new NotFoundException('User not found');
+
+    const newMessage = new this.chatMessageModel({
+      communityId,
+      author: {
+        id: user._id.toString(),
+        username: user.username,
+        displayName: user.displayName || user.username,
+        avatarUrl: user.avatarUrl,
+        purchasedItems: user.purchasedItems,
+      },
+      content,
+      imageUrl,
+    });
+
+    const saved = await newMessage.save();
+    const message = { id: saved._id.toString(), ...saved.toObject(), _id: undefined, __v: undefined };
+
+    this.eventsGateway.emitToRoom(`community_chat_${communityId}`, 'COMMUNITY_CHAT_MESSAGE', message);
+
+    return message;
   }
 }

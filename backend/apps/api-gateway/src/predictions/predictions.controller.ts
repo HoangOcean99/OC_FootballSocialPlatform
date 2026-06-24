@@ -22,7 +22,14 @@ export class PredictionsController {
   @UseGuards(JwtAuthGuard)
   async getMyBets(@Request() req: any) {
     const bets = await this.predictionsService.getMyBets(req.user.sub);
-    return bets.map((b) => ({ id: b._id.toString(), ...b.toObject(), _id: undefined, __v: undefined }));
+    return bets.map((b: any) => ({ id: b._id.toString(), ...b, _id: undefined, __v: undefined }));
+  }
+
+  @Get('my-bets/:id')
+  @UseGuards(JwtAuthGuard)
+  async getBetById(@Request() req: any, @Param('id') id: string) {
+    const bet = await this.predictionsService.getBetById(req.user.sub, id);
+    return { id: bet._id.toString(), ...bet, _id: undefined, __v: undefined };
   }
 
   @Post(':id/bet')

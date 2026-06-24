@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { useAuthStore } from '@/store/useAuthStore';
+import { useNotificationStore } from '@/store/useNotificationStore';
 
 interface SocketContextType {
   socket: Socket | null;
@@ -108,6 +109,20 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
       });
     });
 
+    socketInstance.on('newPrivateMessage', (data) => {
+      showNotification('Tin nhắn mới', {
+        body: data.content,
+      });
+    });
+
+    socketInstance.on('NEW_NOTIFICATION', (data) => {
+      useNotificationStore.getState().addNotification(data);
+      showNotification('Thông báo mới', {
+        body: data.content,
+        icon: data.sender?.avatarUrl || '/favicon.ico'
+      });
+    });
+
     setSocket(socketInstance);
 
     return () => {
@@ -117,6 +132,8 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
       socketInstance.off('COMMUNITY_INVITE_RECEIVED');
       socketInstance.off('COMMUNITY_ADMIN_INVITE_RECEIVED');
       socketInstance.off('COMMUNITY_ADMIN_INVITE_ACCEPTED');
+      socketInstance.off('newPrivateMessage');
+      socketInstance.off('NEW_NOTIFICATION');
       socketInstance.disconnect();
     };
   }, [user?.id]);

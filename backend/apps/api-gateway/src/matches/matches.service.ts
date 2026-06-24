@@ -236,17 +236,17 @@ export class MatchesService implements OnModuleInit, OnModuleDestroy {
       const res = await axios.get(url);
       let matchData = res.data;
 
-      // Translate if lang is 'vi'
-      if (locale === 'vi' && matchData.keyEvents && matchData.keyEvents.length > 0) {
+      // Translate if lang is not 'en'
+      if (locale !== 'en' && matchData.keyEvents && matchData.keyEvents.length > 0) {
         const translate = require('translate-google');
         // We will collect all texts to translate them in bulk or Promise.all
         try {
           const promises = matchData.keyEvents.map(async (event: any) => {
             if (event.text) {
-              event.text = await translate(event.text, { to: 'vi' });
+              event.text = await translate(event.text, { to: locale });
             }
             if (event.type && event.type.text) {
-              event.type.text = await translate(event.type.text, { to: 'vi' });
+              event.type.text = await translate(event.type.text, { to: locale });
             }
             return event;
           });

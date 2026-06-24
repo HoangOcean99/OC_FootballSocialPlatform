@@ -10,10 +10,12 @@ import { toast } from 'react-hot-toast';
 import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
 import { useSocket } from '@/components/providers/SocketProvider';
+import { useTranslations } from 'next-intl';
 
 const MySwal = withReactContent(Swal);
 
 export default function CommunitiesPage() {
+  const t = useTranslations('Communities');
   const router = useRouter();
   const { user, updateUser } = useAuthStore();
   const { socket } = useSocket();
@@ -205,7 +207,7 @@ export default function CommunitiesPage() {
       await acceptCommunityInvite(id);
       setInvites(prev => prev.filter(c => c.id !== id));
       if (user) updateUser({ joinedCommunities: [...(user.joinedCommunities || []), id] });
-      toast.success('Đã tham gia cộng đồng!');
+      toast.success(t('join_success'));
     } catch (err) { toast.error('Có lỗi xảy ra!'); }
   };
 
@@ -368,7 +370,7 @@ export default function CommunitiesPage() {
 
   const renderCommunityList = (list: Community[]) => {
     if (list.length === 0) {
-      return <div className="col-span-full text-center text-gray-400 py-10 bg-white/5 rounded-2xl border border-white/10 border-dashed">Không có cộng đồng nào để hiển thị.</div>;
+      return <div className="col-span-full text-center text-gray-400 py-10 bg-white/5 rounded-2xl border border-white/10 border-dashed">{t('no_communities')}</div>;
     }
     return list.map((community, i) => {
       const isJoined = user?.joinedCommunities?.includes(community.id || '');
@@ -492,12 +494,12 @@ export default function CommunitiesPage() {
                 ) : isCreator ? (
                   <div className="flex items-center gap-2">
                     <span className="flex items-center gap-1 bg-blue-500/10 text-blue-400 border border-blue-500/20 px-3 py-1 rounded-full text-xs font-bold">
-                      <Settings className="w-3 h-3" /> Quản trị viên
+                      <Settings className="w-3 h-3" /> {t('admin_btn')}
                     </span>
                     <button 
                       onClick={(e) => handleJoinLeave(e, community.id || '')}
                       className="flex items-center gap-1 bg-black/50 backdrop-blur-md px-3 py-1 rounded-full text-xs font-bold text-red-400 border border-red-500/30 hover:bg-red-500/20 transition-all"
-                      title="Rời cộng đồng"
+                      title={t('leave_btn')}
                     >
                       <LogOut className="w-3 h-3" />
                     </button>
@@ -505,12 +507,12 @@ export default function CommunitiesPage() {
                 ) : isJoined ? (
                   <div className="flex items-center gap-2">
                     <span className="flex items-center gap-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-3 py-1 rounded-full text-xs font-bold">
-                      <Shield className="w-3 h-3" /> Đã tham gia
+                      <Shield className="w-3 h-3" /> {t('joined_status')}
                     </span>
                     <button 
                       onClick={(e) => handleJoinLeave(e, community.id || '')}
                       className="flex items-center gap-1 bg-black/50 backdrop-blur-md px-3 py-1 rounded-full text-xs font-bold text-red-400 border border-red-500/30 hover:bg-red-500/20 transition-all"
-                      title="Rời cộng đồng"
+                      title={t('leave_btn')}
                     >
                       <LogOut className="w-3 h-3" />
                     </button>
@@ -520,7 +522,7 @@ export default function CommunitiesPage() {
                     onClick={(e) => handleJoinLeave(e, community.id || '')}
                     className="flex items-center gap-1 bg-white/10 backdrop-blur-md px-3 py-1 rounded-full text-xs font-bold text-white hover:bg-emerald-500 hover:text-black transition-colors"
                   >
-                    <Plus className="w-3 h-3" /> Tham gia
+                    <Plus className="w-3 h-3" /> {t('join_btn')}
                   </button>
                 )}
               </div>
@@ -537,7 +539,7 @@ export default function CommunitiesPage() {
                 </div>
                 <div className="flex items-center gap-1.5">
                   <MessageSquare className="w-4 h-4 text-gray-500" />
-                  <span className="font-medium text-gray-300">{community.posts || community.postsToday || 0}/ngày</span>
+                  <span className="font-medium text-gray-300">{community.posts || community.postsToday || 0}{t('per_day')}</span>
                 </div>
               </div>
             </div>
@@ -554,60 +556,51 @@ export default function CommunitiesPage() {
         <div>
           <h1 className="text-3xl font-black text-white mb-2 flex items-center gap-3">
             <Users className="w-8 h-8 text-emerald-400" />
-            Cộng Đồng
+            {t('title').replace('👥 ', '')}
           </h1>
-          <p className="text-gray-400 text-sm">Khám phá, tham gia và quản lý các nhóm đam mê bóng đá</p>
+          <p className="text-gray-400 text-sm">{t('subtitle')}</p>
         </div>
         <button 
           onClick={() => setIsModalOpen(true)}
-          className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-[#03060a] px-6 py-3 rounded-xl font-bold transition-all shadow-[0_0_20px_rgba(52,211,153,0.3)] hover:scale-105"
+          className="bg-emerald-500 text-[#03060a] px-6 py-2.5 rounded-xl font-bold hover:bg-emerald-400 transition-colors w-full md:w-auto flex justify-center items-center gap-2"
         >
-          <Plus className="w-5 h-5" />
-          Tạo Cộng Đồng Mới
+          {t('create_btn').replace('+ ', '')} <Plus className="w-4 h-4" />
         </button>
       </div>
 
-      {/* Tabs and Filters */}
-      <div className="flex flex-col md:flex-row justify-between gap-4">
-        <div className="flex gap-2 p-1 bg-[#0f1923] rounded-2xl border border-white/5 w-fit h-fit">
-          <button
-            onClick={() => { setActiveTab('discover'); setSelectedIds([]); }}
-            className={`px-6 py-2.5 rounded-xl font-semibold text-sm transition-all ${activeTab === 'discover' ? 'bg-emerald-500 text-black shadow-lg' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
+      {/* Tabs */}
+      <div className="flex gap-2 border-b border-white/10 pb-px overflow-x-auto scrollbar-none">
+        {[
+          { id: 'discover', label: t('tab_discover') },
+          { id: 'joined', label: t('tab_joined') },
+          { id: 'invites', label: t('tab_invites') },
+          { id: 'admin', label: t('tab_admin') }
+        ].map(tab => (
+          <button 
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id as any)}
+            className={`px-6 py-3 border-b-2 text-sm font-bold whitespace-nowrap transition-colors flex items-center gap-2 ${activeTab === tab.id ? 'border-emerald-500 text-emerald-400' : 'border-transparent text-gray-400 hover:text-white'}`}
           >
-            Khám phá
+            {tab.label}
+            {tab.id === 'invites' && invites.length > 0 && (
+              <span className="bg-emerald-500 text-[#03060a] text-[10px] px-1.5 py-0.5 rounded-md">{invites.length}</span>
+            )}
           </button>
-          <button
-            onClick={() => { setActiveTab('joined'); setSelectedIds([]); }}
-            className={`px-6 py-2.5 rounded-xl font-semibold text-sm transition-all ${activeTab === 'joined' ? 'bg-emerald-500 text-black shadow-lg' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
-          >
-            Đã tham gia ({joinedCommunities.length})
-          </button>
-          <button
-            onClick={() => { setActiveTab('invites'); setSelectedIds([]); }}
-            className={`px-6 py-2.5 rounded-xl font-semibold text-sm transition-all flex items-center gap-2 ${activeTab === 'invites' ? 'bg-orange-500 text-black shadow-lg shadow-orange-500/20' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
-          >
-            Lời mời {invites.length > 0 && <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">{invites.length}</span>}
-          </button>
-          <button
-            onClick={() => { setActiveTab('admin'); setSelectedIds([]); }}
-            className={`px-6 py-2.5 rounded-xl font-semibold text-sm transition-all flex items-center gap-2 ${activeTab === 'admin' ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
-          >
-            <Settings className="w-4 h-4" />
-            Quản lý ({adminCommunities.length})
-          </button>
-        </div>
+        ))}
+      </div>
 
-        <div className="flex flex-col md:flex-row gap-4">
-          <div className="relative">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-            <input 
-              type="text" 
-              placeholder="Tìm kiếm cộng đồng..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full md:w-64 bg-[#0f1923] border border-white/5 rounded-2xl pl-12 pr-4 py-3 text-white focus:outline-none focus:border-emerald-500 transition-colors"
-            />
-          </div>
+      {/* Filters */}
+      <div className="flex flex-col md:flex-row justify-between gap-4">
+        <div className="relative flex-1">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+          <input 
+            type="text" 
+            placeholder={t('search_placeholder')}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full md:w-64 bg-[#0f1923] border border-white/5 rounded-2xl pl-12 pr-4 py-3 text-white focus:outline-none focus:border-emerald-500 transition-colors"
+          />
+        </div>
           <div className="relative">
             <Filter className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
             <select 
@@ -615,14 +608,13 @@ export default function CommunitiesPage() {
               onChange={(e) => setFilterCategory(e.target.value)}
               className="w-full md:w-48 bg-[#0f1923] border border-white/5 rounded-2xl pl-12 pr-4 py-3 text-white focus:outline-none focus:border-emerald-500 transition-colors appearance-none cursor-pointer"
             >
-              <option value="All">Tất cả danh mục</option>
-              <option value="Club">Câu lạc bộ</option>
-              <option value="National">Đội tuyển</option>
-              <option value="General">Chung</option>
+              <option value="All">{t('tab_all')}</option>
+              <option value="Club">{t('tab_teams')}</option>
+              <option value="National">{t('tab_competitions')}</option>
+              <option value="General">{t('tab_fanmade')}</option>
             </select>
           </div>
         </div>
-      </div>
 
       {/* Lists */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
@@ -690,11 +682,11 @@ export default function CommunitiesPage() {
                 <X className="w-6 h-6" />
               </button>
               
-              <h2 className="text-2xl font-bold text-white mb-6">Tạo Cộng Đồng</h2>
+              <h2 className="text-xl font-bold text-white mb-6">{t('create_title')}</h2>
               
               <form onSubmit={handleCreateCommunity} className="space-y-4 max-h-[70vh] overflow-y-auto pr-2 custom-scrollbar">
                 <div>
-                  <label className="block text-sm font-medium text-gray-400 mb-1">Tên cộng đồng *</label>
+                  <label className="block text-sm font-medium text-gray-400 mb-1">{t('create_name')}</label>
                   <div className="relative">
                     <input 
                       type="text" 
@@ -702,7 +694,7 @@ export default function CommunitiesPage() {
                       value={formData.name}
                       onChange={e => setFormData({...formData, name: e.target.value})}
                       className={`w-full bg-[#1a242d] border ${nameError ? 'border-red-500 focus:border-red-500' : 'border-white/5 focus:border-emerald-500'} rounded-xl px-4 py-3 text-white focus:outline-none transition-colors`}
-                      placeholder="VD: Manchester United VN"
+                      placeholder={t('create_name_ph')}
                     />
                     {isCheckingName && (
                       <div className="absolute right-3 top-3">
@@ -716,53 +708,53 @@ export default function CommunitiesPage() {
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-400 mb-1">Khẩu hiệu (Slogan)</label>
+                  <label className="block text-sm font-medium text-gray-400 mb-1">{t('create_slogan')}</label>
                   <input 
                     type="text" 
                     value={formData.slogan}
                     onChange={e => setFormData({...formData, slogan: e.target.value})}
                     className="w-full bg-[#1a242d] border border-white/5 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-emerald-500 transition-colors"
-                    placeholder="VD: Glory Glory Man United"
+                    placeholder={t('create_slogan_ph')}
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-400 mb-1">Mô tả *</label>
+                  <label className="block text-sm font-medium text-gray-400 mb-1">{t('create_desc')}</label>
                   <textarea 
                     required
                     value={formData.description}
                     onChange={e => setFormData({...formData, description: e.target.value})}
                     className="w-full bg-[#1a242d] border border-white/5 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-emerald-500 transition-colors h-24 resize-none"
-                    placeholder="Giới thiệu về cộng đồng..."
+                    placeholder={t('create_desc_ph')}
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-400 mb-1">Khu vực (Location)</label>
+                  <label className="block text-sm font-medium text-gray-400 mb-1">{t('create_location')}</label>
                   <input 
                     type="text" 
                     value={formData.location}
                     onChange={e => setFormData({...formData, location: e.target.value})}
                     className="w-full bg-[#1a242d] border border-white/5 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-emerald-500 transition-colors"
-                    placeholder="VD: Hà Nội, Hồ Chí Minh"
+                    placeholder={t('create_location_ph')}
                   />
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-400 mb-1">Danh mục</label>
+                    <label className="block text-sm font-medium text-gray-400 mb-1">{t('create_category')}</label>
                     <select 
                       value={formData.category}
                       onChange={e => setFormData({...formData, category: e.target.value})}
                       className="w-full bg-[#1a242d] border border-white/5 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-emerald-500 transition-colors"
                     >
-                      <option value="Club">Câu lạc bộ</option>
-                      <option value="National">Đội tuyển</option>
-                      <option value="General">Chung</option>
+                      <option value="Club">{t('tab_teams')}</option>
+                      <option value="National">{t('tab_competitions')}</option>
+                      <option value="General">{t('tab_fanmade')}</option>
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-400 mb-1">Màu chủ đạo</label>
+                    <label className="block text-sm font-medium text-gray-400 mb-1">{t('create_color')}</label>
                     <input 
                       type="color" 
                       value={formData.themeColor}
@@ -774,7 +766,7 @@ export default function CommunitiesPage() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-400 mb-1">Ảnh Logo</label>
+                    <label className="block text-sm font-medium text-gray-400 mb-1">{t('create_logo')}</label>
                     <div className="relative w-full bg-[#1a242d] border border-white/5 rounded-xl flex items-center justify-center p-2 min-h-[50px]">
                       {isUploadingLogo ? (
                         <div className="w-5 h-5 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
@@ -792,10 +784,10 @@ export default function CommunitiesPage() {
                         title="Tải ảnh lên"
                       />
                     </div>
-                    <p className="text-xs text-gray-500 mt-1">Bấm để tải ảnh lên (hoặc nhập Emoji)</p>
+                    <p className="text-xs text-gray-500 mt-1">{t('create_upload_tip')}</p>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-400 mb-1">Ảnh Bìa (Cover)</label>
+                    <label className="block text-sm font-medium text-gray-400 mb-1">{t('create_cover')}</label>
                     <div className="relative w-full bg-[#1a242d] border border-white/5 rounded-xl flex items-center justify-center p-2 min-h-[50px] overflow-hidden">
                       {isUploadingCover ? (
                         <div className="w-5 h-5 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
@@ -803,7 +795,7 @@ export default function CommunitiesPage() {
                         // eslint-disable-next-line @next/next/no-img-element
                         <img src={formData.cover} alt="Cover" className="w-full h-full object-cover absolute inset-0 opacity-50" />
                       ) : (
-                        <span className="text-xs text-gray-400">Chọn ảnh</span>
+                        <span className="text-xs text-gray-400">{t('create_select_photo')}</span>
                       )}
                       <input 
                         type="file" 
@@ -817,7 +809,7 @@ export default function CommunitiesPage() {
                 </div>
 
                 <div className="pt-2 border-t border-white/10 mt-4">
-                  <h3 className="text-white font-medium mb-3">Tùy chọn nâng cao</h3>
+                  <h3 className="text-white font-medium mb-3">{t('create_advanced')}</h3>
                   
                   <div className="space-y-3">
                     <label className="flex items-center gap-3 cursor-pointer">
@@ -828,8 +820,8 @@ export default function CommunitiesPage() {
                         className="w-4 h-4 rounded bg-[#1a242d] border-white/20 text-emerald-500 focus:ring-emerald-500/30"
                       />
                       <div>
-                        <p className="text-sm text-white">Nhóm riêng tư</p>
-                        <p className="text-xs text-gray-500">Chỉ thành viên mới xem được nội dung</p>
+                        <p className="text-sm text-white">{t('create_private_label')}</p>
+                        <p className="text-xs text-gray-500">{t('create_private_desc')}</p>
                       </div>
                     </label>
                     
@@ -841,18 +833,18 @@ export default function CommunitiesPage() {
                         className="w-4 h-4 rounded bg-[#1a242d] border-white/20 text-emerald-500 focus:ring-emerald-500/30"
                       />
                       <div>
-                        <p className="text-sm text-white">Duyệt thành viên</p>
-                        <p className="text-xs text-gray-500">Admin cần phê duyệt người mới</p>
+                        <p className="text-sm text-white">{t('create_approval_label')}</p>
+                        <p className="text-xs text-gray-500">{t('create_approval_desc')}</p>
                       </div>
                     </label>
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-400 mb-1">Mạng xã hội (Tuỳ chọn)</label>
+                  <label className="block text-sm font-medium text-gray-400 mb-1">{t('create_social')}</label>
                   <div className="space-y-2">
-                    <input type="text" value={formData.socialLinks.facebook} onChange={e => setFormData({...formData, socialLinks: {...formData.socialLinks, facebook: e.target.value}})} placeholder="Link Facebook" className="w-full bg-[#1a242d] border border-white/5 rounded-xl px-4 py-2 text-sm text-white focus:border-emerald-500 transition-colors" />
-                    <input type="text" value={formData.socialLinks.discord} onChange={e => setFormData({...formData, socialLinks: {...formData.socialLinks, discord: e.target.value}})} placeholder="Link Discord" className="w-full bg-[#1a242d] border border-white/5 rounded-xl px-4 py-2 text-sm text-white focus:border-emerald-500 transition-colors" />
+                    <input type="text" value={formData.socialLinks.facebook} onChange={e => setFormData({...formData, socialLinks: {...formData.socialLinks, facebook: e.target.value}})} placeholder={t('link_fb')} className="w-full bg-[#1a242d] border border-white/5 rounded-xl px-4 py-2 text-sm text-white focus:border-emerald-500 transition-colors" />
+                    <input type="text" value={formData.socialLinks.discord} onChange={e => setFormData({...formData, socialLinks: {...formData.socialLinks, discord: e.target.value}})} placeholder={t('link_discord')} className="w-full bg-[#1a242d] border border-white/5 rounded-xl px-4 py-2 text-sm text-white focus:border-emerald-500 transition-colors" />
                   </div>
                 </div>
 
@@ -864,10 +856,10 @@ export default function CommunitiesPage() {
                   {isCreating ? (
                     <>
                       <div className="w-5 h-5 border-2 border-[#03060a] border-t-transparent rounded-full animate-spin" />
-                      Đang tạo...
+                      {t('create_loading')}
                     </>
                   ) : (
-                    'Tạo Mới'
+                    t('create_btn')
                   )}
                 </button>
               </form>

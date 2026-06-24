@@ -8,6 +8,7 @@ import { UsersService } from '../users/users.service';
 
 import { UploadService } from '../upload/upload.service';
 import { EventsGateway } from '../websockets/events.gateway';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class PostsService {
@@ -18,6 +19,7 @@ export class PostsService {
     private usersService: UsersService,
     private uploadService: UploadService,
     private eventsGateway: EventsGateway,
+    private notificationsService: NotificationsService,
   ) {}
 
   async getTrendingPosts() {
@@ -50,6 +52,21 @@ export class PostsService {
     post.likes = reactions.size;
     post.isLiked = reactions.has(userId);
     await post.save();
+
+    // Create notification if liked and not by the author
+    if (reactionType && post.author.username !== userId) { // We don't have the exact author id, so we use username or we need author.id? Ah post.author doesn't have ID... Wait, let's look up user by username.
+      const reactor = await this.usersService.findById(userId);
+      const author = await this.usersService.findByUsername(post.author.username);
+      if (author && reactor && author._id.toString() !== userId) {
+        await this.notificationsService.createNotification(
+          author._id.toString(),
+          'POST_LIKE',
+          `${reactor.displayName || reactor.username} đã bày tỏ cảm xúc về bài viết của bạn.`,
+          `/post/${postId}`,
+          { id: reactor._id.toString(), username: reactor.username, avatarUrl: reactor.avatarUrl }
+        );
+      }
+    }
 
     return {
       likes: post.likes,
@@ -242,6 +259,34 @@ export class PostsService {
         postId: post._id.toString(),
         comment: { id: comment._id.toString(), ...comment.toObject(), _id: undefined, __v: undefined }
       });
+    }
+
+    // Create Notification
+    if (parentId) {
+      const parentComment = await this.commentModel.findById(parentId).exec();
+      if (parentComment) {
+        const parentAuthor = await this.usersService.findByUsername(parentComment.author.username);
+        if (parentAuthor && parentAuthor._id.toString() !== userId) {
+          await this.notificationsService.createNotification(
+            parentAuthor._id.toString(),
+            'COMMENT_REPLY',
+            `${user.displayName || user.username} đã phản hồi bình luận của bạn.`,
+            `/post/${postId}`,
+            { id: user._id.toString(), username: user.username, avatarUrl: user.avatarUrl }
+          );
+        }
+      }
+    } else {
+      const postAuthor = await this.usersService.findByUsername(post.author.username);
+      if (postAuthor && postAuthor._id.toString() !== userId) {
+        await this.notificationsService.createNotification(
+          postAuthor._id.toString(),
+          'POST_COMMENT',
+          `${user.displayName || user.username} đã bình luận về bài viết của bạn.`,
+          `/post/${postId}`,
+          { id: user._id.toString(), username: user.username, avatarUrl: user.avatarUrl }
+        );
+      }
     }
 
     return comment;

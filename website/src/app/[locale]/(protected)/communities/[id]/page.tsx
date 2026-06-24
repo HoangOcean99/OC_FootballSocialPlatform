@@ -1,24 +1,27 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { Users, Shield, MessageSquare, TrendingUp, ArrowLeft, MoreHorizontal, Image as ImageIcon, Send, Plus, Edit2, Trash2, X, MapPin, Globe, MessageCircle, FileText, Link, Settings, LogOut, Share } from 'lucide-react';
 import { fetchCommunityDetails, joinCommunity, leaveCommunity, deleteCommunity, updateCommunity, checkCommunityName, uploadImage, fetchCommunityRequests, approveCommunityRequest, rejectCommunityRequest, fetchCommunityMembers, kickCommunityMember, fetchUserProfile, inviteCommunityMember, searchUsers, promoteCommunityAdmin, acceptCommunityAdminInvite, rejectCommunityAdminInvite, resignCommunityAdmin, createPost, fetchCommunityPosts, fetchPendingPosts, approvePost, rejectPost, createComment, fetchPostComments, deletePost, deleteComment } from '@/lib/api';
-import { Community, UserProfile, Post, Comment } from '@football-fan/shared-types';
+import { Community, UserProfile, Post, Comment, ChatMessage } from '@football-fan/shared-types';
 import PostActions from '@/components/PostActions';
+import CommunityChat from '@/components/CommunityChat';
+import { useImageModalStore } from '@/store/useImageModalStore';
 
-export function formatTimeAgo(dateStr: string | Date): string {
-  if (!dateStr) return 'Vừa xong';
+export function formatTimeAgo(dateStr: string | Date, t?: any): string {
+  if (!dateStr) return t ? t('time_just_now') : 'Vừa xong';
   const diff = Date.now() - new Date(dateStr).getTime();
   const minutes = Math.floor(diff / 60000);
-  if (minutes < 1) return 'Vừa xong';
-  if (minutes < 60) return `${minutes} phút trước`;
+  if (minutes < 1) return t ? t('time_just_now') : 'Vừa xong';
+  if (minutes < 60) return t ? t('time_mins_ago', { min: minutes }) : `${minutes} phút trước`;
   const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours} giờ trước`;
+  if (hours < 24) return t ? t('time_hours_ago', { hour: hours }) : `${hours} giờ trước`;
   const days = Math.floor(hours / 24);
-  if (days < 30) return `${days} ngày trước`;
+  if (days < 30) return t ? t('time_days_ago', { day: days }) : `${days} ngày trước`;
   const months = Math.floor(days / 30);
-  if (months < 12) return `${months} tháng trước`;
-  return `${Math.floor(months / 12)} năm trước`;
+  if (months < 12) return t ? t('time_months_ago', { month: months }) : `${months} tháng trước`;
+  return t ? t('time_years_ago', { year: Math.floor(months / 12) }) : `${Math.floor(months / 12)} năm trước`;
 }
 import { useAuthStore } from '@/store/useAuthStore';
 import { toast } from 'react-hot-toast';
@@ -30,6 +33,7 @@ import { useSocket } from '@/components/providers/SocketProvider';
 const MySwal = withReactContent(Swal);
 
 export default function CommunityDetailPage() {
+  const t = useTranslations('Communities');
   const params = useParams();
   const router = useRouter();
   const id = params.id as string;
@@ -39,6 +43,7 @@ export default function CommunityDetailPage() {
   const [community, setCommunity] = useState<Community | null>(null);
   const [loading, setLoading] = useState(true);
   const [newPost, setNewPost] = useState('');
+  const [activeTab, setActiveTab] = useState<'posts' | 'chat'>('posts');
 
   // Admin and Join States
   const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
@@ -68,6 +73,7 @@ export default function CommunityDetailPage() {
   const [commentImagePreviews, setCommentImagePreviews] = useState<Record<string, string>>({});
   const [replyingTo, setReplyingTo] = useState<{ postId: string; commentId: string; username: string } | null>(null);
   const [isCommenting, setIsCommenting] = useState<Record<string, boolean>>({});
+  const { openModal } = useImageModalStore();
 
   // Edit states
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -515,7 +521,12 @@ export default function CommunityDetailPage() {
               {comment.content && <p className="text-gray-200 text-sm whitespace-pre-wrap">{comment.content}</p>}
               {comment.image && (
                 <div className="mt-2 rounded-xl overflow-hidden border border-white/10 max-w-[250px]">
-                  <img src={comment.image} alt="Comment attachment" className="w-full h-auto object-contain bg-black/20" />
+                  <img 
+                    src={comment.image} 
+                    alt="Comment attachment" 
+                    onClick={() => openModal(comment.image!)}
+                    className="w-full h-auto object-contain bg-black/20 cursor-pointer hover:opacity-90 transition-opacity" 
+                  />
                 </div>
               )}
             </div>
@@ -685,8 +696,8 @@ export default function CommunityDetailPage() {
         if (isAdmin && allAdminIds.length <= 1) {
           if ((community.memberCount || 0) > 1) {
             MySwal.fire({
-              title: 'Không thể rời cộng đồng',
-              text: 'Bạn đang là Quản trị viên duy nhất. Hãy nhường lại quyền Quản trị cho thành viên khác trước khi rời đi.',
+              title: t('cannot_leave_title'),
+              text: t('cannot_leave_desc'),
               icon: 'error',
               confirmButtonColor: '#3b82f6',
               background: '#0f1923',
@@ -695,14 +706,14 @@ export default function CommunityDetailPage() {
             return;
           } else {
             const result = await MySwal.fire({
-              title: 'Xóa cộng đồng?',
-              text: 'Bạn là thành viên duy nhất. Rời đi lúc này đồng nghĩa với việc giải tán cộng đồng. Bạn có chắc chắn?',
+              title: t('delete_community_q'),
+              text: t('disband_warning'),
               icon: 'warning',
               showCancelButton: true,
               confirmButtonColor: '#ef4444',
               cancelButtonColor: '#3b82f6',
-              confirmButtonText: 'Giải tán',
-              cancelButtonText: 'Hủy',
+              confirmButtonText: t('disband'),
+              cancelButtonText: t('cancel'),
               background: '#0f1923',
               color: '#fff'
             });
@@ -710,14 +721,14 @@ export default function CommunityDetailPage() {
           }
         } else {
           const result = await MySwal.fire({
-            title: 'Rời cộng đồng?',
-            text: 'Bạn có chắc chắn muốn rời khỏi cộng đồng này không?',
+            title: t('leave_community_q'),
+            text: t('leave_warning'),
             icon: 'question',
             showCancelButton: true,
             confirmButtonColor: '#ef4444',
             cancelButtonColor: '#3b82f6',
-            confirmButtonText: 'Rời đi',
-            cancelButtonText: 'Hủy',
+            confirmButtonText: t('leave'),
+            cancelButtonText: t('cancel'),
             background: '#0f1923',
             color: '#fff'
           });
@@ -746,7 +757,7 @@ export default function CommunityDetailPage() {
           } else {
             updateUser({ joinedCommunities: res.joinedCommunities });
             setCommunity({ ...community, memberCount: (community.memberCount || 0) + 1 });
-            toast.success('Đã tham gia cộng đồng!');
+            toast.success(t('join_success'));
           }
         }
       }
@@ -776,14 +787,14 @@ export default function CommunityDetailPage() {
 
   const handleKick = async (userId: string) => {
     MySwal.fire({
-      title: 'Xác nhận Kick',
-      text: 'Bạn có chắc chắn muốn kick thành viên này?',
+      title: t('confirm_kick_title'),
+      text: t('confirm_kick_desc'),
       icon: 'warning',
       showCancelButton: true,
       confirmButtonColor: '#ef4444',
       cancelButtonColor: '#3b82f6',
-      confirmButtonText: 'Có, kick!',
-      cancelButtonText: 'Hủy',
+      confirmButtonText: t('yes_kick'),
+      cancelButtonText: t('cancel'),
       background: '#0f1923',
       color: '#fff'
     }).then(async (result) => {
@@ -820,14 +831,14 @@ export default function CommunityDetailPage() {
 
   const handleDelete = async () => {
     MySwal.fire({
-      title: 'Xác nhận xóa',
-      text: 'Bạn có chắc chắn muốn xóa cộng đồng này không? Hành động này không thể hoàn tác!',
+      title: t('confirm_delete_title'),
+      text: t('confirm_delete_desc'),
       icon: 'warning',
       showCancelButton: true,
       confirmButtonColor: '#ef4444',
       cancelButtonColor: '#3b82f6',
-      confirmButtonText: 'Có, xóa nó!',
-      cancelButtonText: 'Hủy',
+      confirmButtonText: t('yes_delete'),
+      cancelButtonText: t('cancel'),
       background: '#0f1923',
       color: '#fff'
     }).then(async (result) => {
@@ -984,7 +995,7 @@ export default function CommunityDetailPage() {
                 {isAdmin ? (
                   <div className="flex items-center gap-2">
                     <span className="flex items-center gap-2 bg-blue-500/10 text-blue-400 border border-blue-500/20 px-6 py-2.5 rounded-xl font-bold">
-                      Quản trị viên
+                      {t('admin_btn')}
                     </span>
                     <button 
                       onClick={() => setIsAdminModalOpen(true)}
@@ -1003,7 +1014,7 @@ export default function CommunityDetailPage() {
                 ) : isJoined ? (
                   <div className="flex items-center gap-2">
                     <span className="flex items-center gap-2 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-6 py-2.5 rounded-xl font-bold">
-                      <Shield className="w-5 h-5" /> Đã tham gia
+                      <Shield className="w-5 h-5" /> {t('joined_status')}
                     </span>
                     <button 
                       onClick={handleJoinLeave}
@@ -1025,7 +1036,7 @@ export default function CommunityDetailPage() {
                     onClick={handleJoinLeave}
                     className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-[#03060a] px-6 py-3 rounded-xl font-bold transition-colors shadow-[0_0_20px_rgba(52,211,153,0.3)]"
                   >
-                    <Plus className="w-5 h-5" /> Tham gia
+                    <Plus className="w-5 h-5" /> {t('join_btn')}
                   </button>
                 )}
               </div>
@@ -1084,7 +1095,30 @@ export default function CommunityDetailPage() {
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-6 mt-20 grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-6">
-          {/* Post Composer */}
+          
+          {/* Tabs */}
+          {isJoined && (
+            <div className="flex border-b border-white/10 mb-4">
+              <button
+                onClick={() => setActiveTab('posts')}
+                className={`flex-1 py-3 font-bold transition-colors border-b-2 ${activeTab === 'posts' ? 'border-emerald-500 text-emerald-400' : 'border-transparent text-gray-400 hover:text-white hover:bg-white/5'}`}
+              >
+                {t('tab_posts')}
+              </button>
+              <button
+                onClick={() => setActiveTab('chat')}
+                className={`flex-1 py-3 font-bold transition-colors border-b-2 ${activeTab === 'chat' ? 'border-emerald-500 text-emerald-400' : 'border-transparent text-gray-400 hover:text-white hover:bg-white/5'}`}
+              >
+                {t('tab_chat')}
+              </button>
+            </div>
+          )}
+
+          {activeTab === 'chat' ? (
+            <CommunityChat communityId={id} isJoined={isJoined} communityName={community?.name || ''} />
+          ) : (
+            <>
+              {/* Post Composer */}
           <div className="bg-[#0f1923] border border-white/[0.05] rounded-3xl p-4 shadow-xl">
             <form onSubmit={handleCreatePost}>
               <div className="flex gap-4">
@@ -1100,7 +1134,7 @@ export default function CommunityDetailPage() {
                   <textarea 
                     value={postContent}
                     onChange={(e) => setPostContent(e.target.value)}
-                    placeholder={isJoined ? "Bạn đang nghĩ gì?" : "Tham gia cộng đồng để đăng bài viết..."}
+                    placeholder={isJoined ? t('post_placeholder') : t('post_placeholder_guest')}
                     disabled={!isJoined || isPosting}
                     className="w-full bg-transparent text-white placeholder-gray-500 resize-none outline-none text-lg min-h-[60px]"
                   />
@@ -1138,7 +1172,7 @@ export default function CommunityDetailPage() {
                       className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 disabled:hover:bg-emerald-500 text-[#03060a] px-4 py-2 rounded-xl font-bold transition-colors"
                     >
                       {isPosting ? <div className="w-4 h-4 border-2 border-black/20 border-t-black rounded-full animate-spin" /> : <Send className="w-4 h-4" />}
-                      Đăng
+                      {t('post_button')}
                     </button>
                   </div>
                 </div>
@@ -1148,12 +1182,12 @@ export default function CommunityDetailPage() {
 
           {/* Posts Feed */}
           {isLoadingPosts ? (
-            <div className="text-center py-10 text-gray-400">Đang tải bài viết...</div>
+            <div className="text-center py-10 text-gray-400">{t('loading_posts')}</div>
           ) : posts.length === 0 ? (
             <div className="bg-[#0f1923] border border-white/[0.05] rounded-3xl p-10 text-center shadow-xl">
               <MessageSquare className="w-12 h-12 text-gray-500 mx-auto mb-4 opacity-50" />
-              <h3 className="text-xl font-bold text-white mb-2">Chưa có bài viết nào</h3>
-              <p className="text-gray-400">Hãy là người đầu tiên bắt đầu cuộc trò chuyện trong cộng đồng này!</p>
+              <h3 className="text-xl font-bold text-white mb-2">{t('no_posts_title')}</h3>
+              <p className="text-gray-400">{t('no_posts_desc')}</p>
             </div>
           ) : (
             <div className="space-y-6">
@@ -1184,7 +1218,7 @@ export default function CommunityDetailPage() {
                           )}
                           <span className="bg-white/10 text-gray-300 text-[10px] px-2 py-0.5 rounded-full">{post.author.levelTitle}</span>
                         </div>
-                        <div className="text-xs text-gray-500">{formatTimeAgo(post.createdAt)}</div>
+                        <div className="text-xs text-gray-500">{formatTimeAgo(post.createdAt, t)}</div>
                       </div>
                     </div>
                     {(isAdmin || post.author.username === user?.username) && (
@@ -1205,7 +1239,12 @@ export default function CommunityDetailPage() {
                     {/* Post Image */}
                     {post.image && (
                       <div className="mb-4 rounded-2xl overflow-hidden border border-white/5">
-                        <img src={post.image} alt="Post" className="w-full h-auto object-cover max-h-[500px]" />
+                        <img 
+                          src={post.image} 
+                          alt="Post" 
+                          onClick={(e) => { e.stopPropagation(); openModal(post.image!); }}
+                          className="w-full h-auto object-cover max-h-[500px] cursor-pointer hover:opacity-90 transition-opacity" 
+                        />
                       </div>
                     )}
                   </div>
@@ -1320,12 +1359,14 @@ export default function CommunityDetailPage() {
               ))}
             </div>
           )}
+            </>
+          )}
         </div>
 
         {/* Sidebar Info */}
         <div className="space-y-6">
           <div className="bg-[#0f1923] border border-white/[0.05] rounded-3xl p-6 shadow-xl">
-            <h3 className="text-lg font-bold text-white mb-4">Giới thiệu</h3>
+            <h3 className="text-lg font-bold text-white mb-4">{t('about_title')}</h3>
             
             <div className="space-y-4 mb-6">
               <div className="flex items-center gap-3 text-gray-300">
@@ -1334,7 +1375,7 @@ export default function CommunityDetailPage() {
                 </div>
                 <div>
                   <div className="font-bold text-white">{community.memberCount || 0}</div>
-                  <div className="text-xs text-gray-500">Thành viên</div>
+                  <div className="text-xs text-gray-500">{t('members_label')}</div>
                 </div>
               </div>
               <div className="flex items-center gap-3 text-gray-300">
@@ -1343,7 +1384,7 @@ export default function CommunityDetailPage() {
                 </div>
                 <div>
                   <div className="font-bold text-white">{community.postsToday || 0}</div>
-                  <div className="text-xs text-gray-500">Bài viết hôm nay</div>
+                  <div className="text-xs text-gray-500">{t('posts_today_label')}</div>
                 </div>
               </div>
               {community.location && (
@@ -1353,7 +1394,7 @@ export default function CommunityDetailPage() {
                   </div>
                   <div>
                     <div className="font-bold text-white">{community.location}</div>
-                    <div className="text-xs text-gray-500">Khu vực</div>
+                    <div className="text-xs text-gray-500">{t('region_label')}</div>
                   </div>
                 </div>
               )}
@@ -1433,11 +1474,11 @@ export default function CommunityDetailPage() {
                 <X className="w-6 h-6" />
               </button>
               
-              <h2 className="text-2xl font-bold text-white mb-6">Chỉnh sửa Cộng Đồng</h2>
+              <h2 className="text-2xl font-bold text-white mb-6">{t('edit_community')}</h2>
               
               <form onSubmit={handleUpdate} className="space-y-4 max-h-[70vh] overflow-y-auto pr-2 custom-scrollbar">
                 <div>
-                  <label className="block text-sm font-medium text-gray-400 mb-1">Tên cộng đồng</label>
+                  <label className="block text-sm font-medium text-gray-400 mb-1">{t('community_name')}</label>
                   <div className="relative">
                     <input 
                       type="text" 
@@ -1458,7 +1499,7 @@ export default function CommunityDetailPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-400 mb-1">Khẩu hiệu (Slogan)</label>
+                  <label className="block text-sm font-medium text-gray-400 mb-1">{t('slogan')}</label>
                   <input 
                     type="text" 
                     value={editData.slogan}
@@ -1468,7 +1509,7 @@ export default function CommunityDetailPage() {
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-400 mb-1">Mô tả</label>
+                  <label className="block text-sm font-medium text-gray-400 mb-1">{t('description')}</label>
                   <textarea 
                     required
                     value={editData.description}
@@ -1478,7 +1519,7 @@ export default function CommunityDetailPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-400 mb-1">Khu vực (Location)</label>
+                  <label className="block text-sm font-medium text-gray-400 mb-1">{t('location')}</label>
                   <input 
                     type="text" 
                     value={editData.location}
@@ -1490,19 +1531,19 @@ export default function CommunityDetailPage() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-400 mb-1">Danh mục</label>
+                    <label className="block text-sm font-medium text-gray-400 mb-1">{t('category')}</label>
                     <select 
                       value={editData.category}
                       onChange={e => setEditData({...editData, category: e.target.value})}
                       className="w-full bg-[#1a242d] border border-white/5 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-emerald-500 transition-colors"
                     >
-                      <option value="Club">Câu lạc bộ</option>
-                      <option value="National">Đội tuyển</option>
-                      <option value="General">Chung</option>
+                      <option value="Club">{t('category_club')}</option>
+                      <option value="National">{t('category_national')}</option>
+                      <option value="General">{t('category_general')}</option>
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-400 mb-1">Màu chủ đạo</label>
+                    <label className="block text-sm font-medium text-gray-400 mb-1">{t('theme_color')}</label>
                     <input 
                       type="color" 
                       value={editData.themeColor}
@@ -1514,7 +1555,7 @@ export default function CommunityDetailPage() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-400 mb-1">Ảnh Logo</label>
+                    <label className="block text-sm font-medium text-gray-400 mb-1">{t('logo_image')}</label>
                     <div className="relative w-full bg-[#1a242d] border border-white/5 rounded-xl flex items-center justify-center p-2 min-h-[50px]">
                       {isUploadingLogo ? (
                         <div className="w-5 h-5 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
@@ -1529,12 +1570,12 @@ export default function CommunityDetailPage() {
                         accept="image/*"
                         onChange={(e) => handleImageUpload(e, 'logo')}
                         className="absolute inset-0 opacity-0 cursor-pointer"
-                        title="Tải ảnh lên"
+                        title={t('upload_image')}
                       />
                     </div>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-400 mb-1">Ảnh Bìa (Cover)</label>
+                    <label className="block text-sm font-medium text-gray-400 mb-1">{t('cover_image')}</label>
                     <div className="relative w-full bg-[#1a242d] border border-white/5 rounded-xl flex items-center justify-center p-2 min-h-[50px] overflow-hidden">
                       {isUploadingCover ? (
                         <div className="w-5 h-5 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
@@ -1542,21 +1583,21 @@ export default function CommunityDetailPage() {
                         // eslint-disable-next-line @next/next/no-img-element
                         <img src={editData.cover} alt="Cover" className="w-full h-full object-cover absolute inset-0 opacity-50" />
                       ) : (
-                        <span className="text-xs text-gray-400">Chọn ảnh</span>
+                        <span className="text-xs text-gray-400">{t('choose_image')}</span>
                       )}
                       <input 
                         type="file" 
                         accept="image/*"
                         onChange={(e) => handleImageUpload(e, 'cover')}
                         className="absolute inset-0 opacity-0 cursor-pointer z-10"
-                        title="Tải ảnh lên"
+                        title={t('upload_image')}
                       />
                     </div>
                   </div>
                 </div>
 
                 <div className="pt-2 border-t border-white/10 mt-4">
-                  <h3 className="text-white font-medium mb-3">Tùy chọn nâng cao</h3>
+                  <h3 className="text-white font-medium mb-3">{t('advanced_options')}</h3>
                   <div className="space-y-3">
                     <label className="flex items-center gap-3 cursor-pointer">
                       <input 
@@ -1566,8 +1607,8 @@ export default function CommunityDetailPage() {
                         className="w-4 h-4 rounded bg-[#1a242d] border-white/20 text-emerald-500 focus:ring-emerald-500/30"
                       />
                       <div>
-                        <p className="text-sm text-white">Nhóm riêng tư</p>
-                        <p className="text-xs text-gray-500">Chỉ thành viên mới xem được nội dung</p>
+                        <p className="text-sm text-white">{t('private_group')}</p>
+                        <p className="text-xs text-gray-500">{t('private_group_desc')}</p>
                       </div>
                     </label>
                     <label className="flex items-center gap-3 cursor-pointer">
@@ -1578,18 +1619,18 @@ export default function CommunityDetailPage() {
                         className="w-4 h-4 rounded bg-[#1a242d] border-white/20 text-emerald-500 focus:ring-emerald-500/30"
                       />
                       <div>
-                        <p className="text-sm text-white">Duyệt thành viên</p>
-                        <p className="text-xs text-gray-500">Admin cần phê duyệt người mới</p>
+                        <p className="text-sm text-white">{t('require_approval')}</p>
+                        <p className="text-xs text-gray-500">{t('require_approval_desc')}</p>
                       </div>
                     </label>
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-400 mb-1">Mạng xã hội (Tuỳ chọn)</label>
+                  <label className="block text-sm font-medium text-gray-400 mb-1">{t('social_networks')}</label>
                   <div className="space-y-2">
-                    <input type="text" value={editData.socialLinks.facebook} onChange={e => setEditData({...editData, socialLinks: {...editData.socialLinks, facebook: e.target.value}})} placeholder="Link Facebook" className="w-full bg-[#1a242d] border border-white/5 rounded-xl px-4 py-2 text-sm text-white focus:border-emerald-500 transition-colors" />
-                    <input type="text" value={editData.socialLinks.discord} onChange={e => setEditData({...editData, socialLinks: {...editData.socialLinks, discord: e.target.value}})} placeholder="Link Discord" className="w-full bg-[#1a242d] border border-white/5 rounded-xl px-4 py-2 text-sm text-white focus:border-emerald-500 transition-colors" />
+                    <input type="text" value={editData.socialLinks.facebook} onChange={e => setEditData({...editData, socialLinks: {...editData.socialLinks, facebook: e.target.value}})} placeholder={t('facebook_link')} className="w-full bg-[#1a242d] border border-white/5 rounded-xl px-4 py-2 text-sm text-white focus:border-emerald-500 transition-colors" />
+                    <input type="text" value={editData.socialLinks.discord} onChange={e => setEditData({...editData, socialLinks: {...editData.socialLinks, discord: e.target.value}})} placeholder={t('discord_link')} className="w-full bg-[#1a242d] border border-white/5 rounded-xl px-4 py-2 text-sm text-white focus:border-emerald-500 transition-colors" />
                   </div>
                 </div>
 
@@ -1601,10 +1642,10 @@ export default function CommunityDetailPage() {
                   {isUpdating ? (
                     <>
                       <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      Đang lưu...
+                      {t('saving')}
                     </>
                   ) : (
-                    'Lưu Thay Đổi'
+                    t('save_changes')
                   )}
                 </button>
               </form>
@@ -1630,7 +1671,7 @@ export default function CommunityDetailPage() {
             >
               <div className="flex items-center justify-between p-6 border-b border-white/5">
                 <h2 className="text-2xl font-bold text-white flex items-center gap-3">
-                  <Shield className="w-6 h-6 text-blue-400" /> Quản lý cộng đồng
+                  <Shield className="w-6 h-6 text-blue-400" /> {t('manage_community')}
                 </h2>
                 <button 
                   onClick={() => setIsAdminModalOpen(false)}
@@ -1645,19 +1686,19 @@ export default function CommunityDetailPage() {
                   onClick={() => setAdminTab('members')}
                   className={`py-4 px-4 font-semibold text-sm border-b-2 transition-colors ${adminTab === 'members' ? 'border-emerald-500 text-emerald-400' : 'border-transparent text-gray-400 hover:text-white'}`}
                 >
-                  Thành viên ({membersList.length})
+                  {t('members_tab', { count: membersList.length })}
                 </button>
                 <button 
                   onClick={() => setAdminTab('requests')}
                   className={`py-4 px-4 font-semibold text-sm border-b-2 transition-colors ${adminTab === 'requests' ? 'border-emerald-500 text-emerald-400' : 'border-transparent text-gray-400 hover:text-white'}`}
                 >
-                  Yêu cầu duyệt ({requestsList.length})
+                  {t('join_requests_tab', { count: requestsList.length })}
                 </button>
                 <button 
                   onClick={() => setAdminTab('invite')}
                   className={`py-4 px-4 font-semibold text-sm border-b-2 transition-colors ${adminTab === 'invite' ? 'border-emerald-500 text-emerald-400' : 'border-transparent text-gray-400 hover:text-white'}`}
                 >
-                  Mời thành viên
+                  {t('invite_members_tab')}
                 </button>
                 {community.requirePostApproval && (
                   <button 
@@ -1678,7 +1719,7 @@ export default function CommunityDetailPage() {
                         type="text" 
                         value={memberSearch}
                         onChange={(e) => setMemberSearch(e.target.value)}
-                        placeholder="Tìm kiếm thành viên trong cộng đồng..."
+                        placeholder={t('search_members')}
                         className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-white placeholder-gray-500 outline-none focus:border-emerald-500/50"
                       />
                     </div>
@@ -1695,7 +1736,7 @@ export default function CommunityDetailPage() {
                             <div>
                               <p className="text-white font-bold">{member.username}</p>
                               <p className="text-sm text-gray-400">
-                                {community?.creatorId === member.id ? 'Người tạo' : community?.adminIds?.includes(member.id) ? 'Quản trị viên' : 'Thành viên'}
+                                {community?.creatorId === member.id ? t('role_creator') : community?.adminIds?.includes(member.id) ? t('admin_btn') : t('role_member')}
                               </p>
                             </div>
                           </div>
@@ -1715,7 +1756,7 @@ export default function CommunityDetailPage() {
                                 }}
                                 className="px-3 py-1.5 bg-yellow-500/10 text-yellow-500 hover:bg-yellow-500 hover:text-white border border-yellow-500/20 rounded-lg transition-colors text-sm font-bold"
                               >
-                                Từ chức
+                                {t('resign')}
                               </button>
                             )}
 
@@ -1733,14 +1774,14 @@ export default function CommunityDetailPage() {
                                     }}
                                     className="px-3 py-1.5 bg-blue-500/10 text-blue-400 hover:bg-blue-500 hover:text-white border border-blue-500/20 rounded-lg transition-colors text-sm font-bold"
                                   >
-                                    Phong QTV
+                                    {t('promote_admin')}
                                   </button>
                                 )}
                                 <button 
                                   onClick={() => handleKick(member.id)}
                                   className="px-3 py-1.5 bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white rounded-lg transition-colors text-sm font-bold"
                                 >
-                                  Kick
+                                  {t('kick')}
                                 </button>
                               </>
                             )}
@@ -1754,7 +1795,7 @@ export default function CommunityDetailPage() {
                 {adminTab === 'requests' && (
                   <div className="space-y-4">
                     {requestsList.length === 0 ? (
-                      <div className="text-center text-gray-500 py-10">Không có yêu cầu nào.</div>
+                      <div className="text-center text-gray-500 py-10">{t('no_requests')}</div>
                     ) : (
                       requestsList.map(req => (
                         <div key={req.id} className="flex flex-col sm:flex-row sm:items-center justify-between bg-white/5 border border-white/5 p-4 rounded-xl gap-4">
@@ -1770,13 +1811,13 @@ export default function CommunityDetailPage() {
                               onClick={() => handleApprove(req.id)}
                               className="bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 px-4 py-2 rounded-lg text-sm font-medium transition-colors border border-emerald-500/30"
                             >
-                              Duyệt
+                              {t('approve')}
                             </button>
                             <button 
                               onClick={() => handleReject(req.id)}
                               className="bg-red-500/20 text-red-400 hover:bg-red-500/30 px-4 py-2 rounded-lg text-sm font-medium transition-colors border border-red-500/30"
                             >
-                              Từ chối
+                              {t('reject')}
                             </button>
                           </div>
                         </div>
@@ -1792,15 +1833,15 @@ export default function CommunityDetailPage() {
                         type="text" 
                         value={inviteSearch}
                         onChange={(e) => setInviteSearch(e.target.value)}
-                        placeholder="Tìm kiếm người dùng trong hệ thống..."
+                        placeholder={t('search_users_placeholder')}
                         className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-white placeholder-gray-500 outline-none focus:border-emerald-500/50"
                       />
                     </div>
                     
                     {isSearchingUsers ? (
-                      <div className="text-center text-gray-500 py-10">Đang tìm kiếm...</div>
+                      <div className="text-center text-gray-500 py-10">{t('searching_users')}</div>
                     ) : inviteSearch.trim().length > 0 && inviteSearchResults.length === 0 ? (
-                      <div className="text-center text-gray-500 py-10">Không tìm thấy người dùng nào phù hợp.</div>
+                      <div className="text-center text-gray-500 py-10">{t('no_users_found')}</div>
                     ) : inviteSearchResults.length > 0 ? (
                       inviteSearchResults.map(u => {
                         const isAlreadyMember = membersList.some(m => m.id === u.id);
@@ -1814,7 +1855,7 @@ export default function CommunityDetailPage() {
                               </div>
                             </div>
                             {isAlreadyMember ? (
-                              <span className="px-3 py-1.5 text-gray-500 text-sm font-medium">Đã tham gia</span>
+                              <span className="px-3 py-1.5 text-gray-500 text-sm font-medium">{t('joined_status')}</span>
                             ) : (
                                 <button 
                                   onClick={() => handleInvite(u.username)}
@@ -1828,7 +1869,7 @@ export default function CommunityDetailPage() {
                         );
                       })
                     ) : (
-                      <div className="text-center text-gray-500 py-10">Gõ từ khoá để tìm kiếm người dùng</div>
+                      <div className="text-center text-gray-500 py-10">{t('type_to_search')}</div>
                     )}
                   </div>
                 )}

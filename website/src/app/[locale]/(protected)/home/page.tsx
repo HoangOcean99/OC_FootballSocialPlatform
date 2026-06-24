@@ -424,13 +424,13 @@ export default function HomePage() {
           {/* Feed Header */}
           <div className="flex items-center justify-between">
             <h2 className="text-base font-bold text-emerald-400 flex items-center gap-2">
-              <Target className="w-5 h-5" /> <span>Kèo Dự Đoán HOT</span>
+              <Target className="w-5 h-5" /> <span>{t('hot_predictions')}</span>
             </h2>
             <button 
               onClick={() => router.push('/predictions')}
               className="text-xs font-semibold text-emerald-500 bg-emerald-500/10 px-3 py-1.5 rounded-lg hover:bg-emerald-500/20 transition-colors"
             >
-              Xem tất cả
+              {t('view_all')}
             </button>
           </div>
 
@@ -440,7 +440,7 @@ export default function HomePage() {
               <div className="text-sm text-gray-400">Đang tải kèo...</div>
             ) : predictions.length === 0 ? (
               <div className="text-center text-gray-400 py-10 bg-white/[0.02] rounded-2xl border border-white/5">
-                Chưa có kèo dự đoán nào cho hôm nay.
+                {t('no_data')}
               </div>
             ) : (
               predictions.map((pred) => {
@@ -451,7 +451,7 @@ export default function HomePage() {
                     <div className="flex justify-between items-center mb-4">
                       <span className="text-xs font-bold text-gray-400 uppercase">{pred.competition}</span>
                       {pred.status === 'OPEN' ? (
-                        <span className="text-[10px] font-bold text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">ĐANG MỞ</span>
+                        <span className="text-[10px] font-bold text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">{t('status_open')}</span>
                       ) : (
                         <span className="text-[10px] font-bold text-gray-500 bg-white/5 px-2 py-0.5 rounded-md">KẾT THÚC</span>
                       )}
@@ -488,7 +488,7 @@ export default function HomePage() {
                           ${myBet?.type === 'HOME_WIN' ? 'bg-amber-500 text-amber-950 border-amber-400' : 
                             isFinished ? 'bg-white/5 border-transparent text-gray-600' : 'bg-white/5 border-white/10 hover:bg-white/10 text-gray-300'}`}
                       >
-                        Thắng {myBet?.type === 'HOME_WIN' ? <CheckCircle2 className="w-3 h-3" /> : `(${pred.homeOdds?.toFixed(2)})`}
+                        {t('btn_win')} {myBet?.type === 'HOME_WIN' ? <CheckCircle2 className="w-3 h-3" /> : `(${pred.homeOdds?.toFixed(2)})`}
                       </button>
                       <button 
                         onClick={() => openBetModal(pred, 'DRAW', pred.drawOdds || 3.0, myBet)}
@@ -497,7 +497,7 @@ export default function HomePage() {
                           ${myBet?.type === 'DRAW' ? 'bg-amber-500 text-amber-950 border-amber-400' : 
                             isFinished ? 'bg-white/5 border-transparent text-gray-600' : 'bg-white/5 border-white/10 hover:bg-white/10 text-gray-300'}`}
                       >
-                        Hòa {myBet?.type === 'DRAW' ? <CheckCircle2 className="w-3 h-3" /> : `(${pred.drawOdds?.toFixed(2)})`}
+                        {t('btn_draw')} {myBet?.type === 'DRAW' ? <CheckCircle2 className="w-3 h-3" /> : `(${pred.drawOdds?.toFixed(2)})`}
                       </button>
                       <button 
                         onClick={() => openBetModal(pred, 'AWAY_WIN', pred.awayOdds || 2.5, myBet)}
@@ -506,7 +506,7 @@ export default function HomePage() {
                           ${myBet?.type === 'AWAY_WIN' ? 'bg-amber-500 text-amber-950 border-amber-400' : 
                             isFinished ? 'bg-white/5 border-transparent text-gray-600' : 'bg-white/5 border-white/10 hover:bg-white/10 text-gray-300'}`}
                       >
-                        Thắng {myBet?.type === 'AWAY_WIN' ? <CheckCircle2 className="w-3 h-3" /> : `(${pred.awayOdds?.toFixed(2)})`}
+                        {t('btn_win')} {myBet?.type === 'AWAY_WIN' ? <CheckCircle2 className="w-3 h-3" /> : `(${pred.awayOdds?.toFixed(2)})`}
                       </button>
                     </div>
                   </div>
@@ -515,7 +515,7 @@ export default function HomePage() {
             )}
           </div>
           <button onClick={() => router.push('/predictions')} className="w-full py-3 rounded-2xl border border-white/[0.08] text-sm text-gray-500 hover:text-white hover:bg-white/[0.04] hover:border-white/[0.14] transition-all duration-200 font-medium">
-            Khám phá thêm kèo
+            {t('view_all')}
           </button>
 
           {betModalOpen && selectedMatch && (

@@ -14,7 +14,7 @@ export class Post implements Omit<IPost, 'id' | 'reactionCounts' | 'myReaction'>
   @Prop({ type: Object, required: true })
   community: PostCommunity;
 
-  @Prop({ required: true })
+  @Prop({ default: '' })
   content: string;
 
   @Prop()

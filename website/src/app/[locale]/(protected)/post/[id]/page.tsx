@@ -10,6 +10,7 @@ import { useAuthStore } from '@/store/useAuthStore';
 import { toast } from 'react-hot-toast';
 import PostActions from '@/components/PostActions';
 import { io, Socket } from 'socket.io-client';
+import { useImageModalStore } from '@/store/useImageModalStore';
 
 export function formatTimeAgo(dateStr: string | Date): string {
   if (!dateStr) return 'Vừa xong';
@@ -43,6 +44,7 @@ export default function PostDetailPage() {
   const [commentImagePreviews, setCommentImagePreviews] = useState<Record<string, string>>({});
   const [replyingTo, setReplyingTo] = useState<{ postId: string; commentId: string; username: string } | null>(null);
   const [isCommenting, setIsCommenting] = useState<Record<string, boolean>>({});
+  const { openModal } = useImageModalStore();
 
   const socketRef = useRef<Socket | null>(null);
 
@@ -261,7 +263,12 @@ export default function PostDetailPage() {
               {comment.content && <p className="text-gray-200 text-sm whitespace-pre-wrap">{comment.content}</p>}
               {comment.image && (
                 <div className="mt-2 rounded-xl overflow-hidden border border-white/10 max-w-[250px]">
-                  <img src={comment.image} alt="Comment attachment" className="w-full h-auto object-contain bg-black/20" />
+                  <img 
+                    src={comment.image} 
+                    alt="Comment attachment" 
+                    onClick={() => openModal(comment.image!)}
+                    className="w-full h-auto object-contain bg-black/20 cursor-pointer hover:opacity-90 transition-opacity" 
+                  />
                 </div>
               )}
             </div>
@@ -416,7 +423,12 @@ export default function PostDetailPage() {
           <p className="text-gray-200 leading-relaxed mb-4 whitespace-pre-wrap">{post.content}</p>
           {post.image && (
             <div className="mb-4 rounded-xl overflow-hidden border border-white/10">
-              <img src={post.image} alt="Post image" className="w-full h-auto max-h-[500px] object-cover" />
+              <img 
+                src={post.image} 
+                alt="Post image" 
+                onClick={() => openModal(post.image!)}
+                className="w-full h-auto max-h-[500px] object-cover cursor-pointer hover:opacity-90 transition-opacity" 
+              />
             </div>
           )}
 

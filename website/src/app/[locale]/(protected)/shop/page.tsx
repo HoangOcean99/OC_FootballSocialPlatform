@@ -5,6 +5,7 @@ import { ShoppingBag, Coins, CheckCircle2 } from 'lucide-react';
 import { fetchShopItems, buyShopItem } from '@/lib/api';
 import { useAuthStore } from '@/store/useAuthStore';
 import toast from 'react-hot-toast';
+import { useTranslations } from 'next-intl';
 
 interface ShopItem {
   id: string;
@@ -16,6 +17,7 @@ interface ShopItem {
 }
 
 export default function ShopPage() {
+  const t = useTranslations('Shop');
   const { user, updateUser } = useAuthStore();
   const [items, setItems] = useState<ShopItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -59,17 +61,26 @@ export default function ShopPage() {
         <div>
           <h1 className="text-3xl font-black text-white mb-2 flex items-center gap-3">
             <ShoppingBag className="w-8 h-8 text-amber-500" />
-            Cửa Hàng
+            {t('title')}
           </h1>
-          <p className="text-gray-400 text-sm">Dùng XP của bạn để mua lượt cược và đặc quyền</p>
+          <p className="text-gray-400 text-sm">{t('subtitle')}</p>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mt-8">
         {loading ? (
-          <div className="col-span-full text-center py-10 text-gray-500 font-bold">Đang tải cửa hàng...</div>
+          <div className="col-span-full text-center py-10 text-gray-500 font-bold">...</div>
         ) : items.map((item, i) => {
           const isOwned = item.type !== 'CONSUMABLE' && user?.purchasedItems?.includes(item.id);
+          
+          const itemTransMap: Record<string, {name: string, desc: string}> = {
+            'extra_prediction': { name: 'extra_predict', desc: 'extra_predict_desc' },
+            'frame_dragon': { name: 'avatar_dragon', desc: 'avatar_dragon_desc' },
+            'name_vip_red': { name: 'vip_red', desc: 'vip_red_desc' },
+            'badge_wizard': { name: 'badge_wizard', desc: 'badge_wizard_desc' }
+          };
+          const tName = itemTransMap[item.id] ? t(itemTransMap[item.id].name as any) : item.name;
+          const tDesc = itemTransMap[item.id] ? t(itemTransMap[item.id].desc as any) : item.description;
           
           return (
             <motion.div
@@ -82,8 +93,8 @@ export default function ShopPage() {
               <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/10 blur-[50px] rounded-full pointer-events-none" />
               
               <div className="text-6xl text-center mb-4">{item.emoji}</div>
-              <h3 className="text-lg font-black text-white text-center mb-2">{item.name}</h3>
-              <p className="text-sm text-gray-400 text-center flex-1 mb-6">{item.description}</p>
+              <h3 className="text-lg font-black text-white text-center mb-2">{tName}</h3>
+              <p className="text-sm text-gray-400 text-center flex-1 mb-6">{tDesc}</p>
               
               <button
                 onClick={() => handleBuy(item)}
@@ -99,12 +110,12 @@ export default function ShopPage() {
                 {isOwned ? (
                   <>
                     <CheckCircle2 className="w-5 h-5" />
-                    Đã sở hữu
+                    {t('btn_owned')}
                   </>
                 ) : (
                   <>
                     <Coins className="w-5 h-5" />
-                    Mua ({item.price.toLocaleString()} XP)
+                    {t('btn_buy')} ({item.price.toLocaleString()} XP)
                   </>
                 )}
               </button>

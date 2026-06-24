@@ -33,8 +33,9 @@ export class UsersController {
   }
 
   @Get('online')
-  async getOnlineUsers() {
-    const users = await this.usersService.getOnlineUsers();
+  // @UseGuards(JwtAuthGuard)
+  async getOnlineUsers(@Request() req: any) {
+    const users = await this.usersService.getOnlineUsers(req?.user?.sub || '6a3b5f76318daf781609b724');
     return users.map((u) => ({ id: u._id.toString(), ...u.toObject(), _id: undefined, __v: undefined }));
   }
 
@@ -46,10 +47,25 @@ export class UsersController {
   }
 
   @Get('profile/:username')
-  async getProfile(@Param('username') username: string) {
+  // @UseGuards(JwtAuthGuard)
+  async getProfile(@Param('username') username: string, @Request() req: any) {
+    console.log('Fetching profile for username:', username);
     const user = await this.usersService.getProfile(username);
+    console.log('Found user:', !!user);
     if (!user) return null;
-    return { id: user._id.toString(), ...user.toObject(), _id: undefined, __v: undefined };
+
+    const isOwnProfile = user._id.toString() === req?.user?.sub || user.username === req?.user?.username;
+    const userObj = user.toObject();
+
+    if (!isOwnProfile) {
+      delete (userObj as any).email;
+      // Do not delete purchasedItems or activeItems, as they are used to display cosmetics on the profile.
+      delete (userObj as any).passwordHash;
+      delete (userObj as any).googleId;
+      delete (userObj as any).provider;
+    }
+
+    return { id: user._id.toString(), ...userObj, _id: undefined, __v: undefined };
   }
 
   @Put('heartbeat')
@@ -71,5 +87,36 @@ export class UsersController {
   async removeFavoriteCompetition(@Request() req: any, @Param('name') name: string) {
     const user = await this.usersService.removeFavoriteCompetition(req.user.sub, name);
     return { success: true, favoriteCompetitions: user?.favoriteCompetitions || [] };
+  }
+
+  // Follow System
+  @Post(':id/follow')
+  @UseGuards(JwtAuthGuard)
+  async followUser(@Request() req: any, @Param('id') targetId: string) {
+    return this.usersService.followUser(req.user.sub, targetId);
+  }
+
+  @Delete(':id/follow')
+  @UseGuards(JwtAuthGuard)
+  async unfollowUser(@Request() req: any, @Param('id') targetId: string) {
+    return this.usersService.unfollowUser(req.user.sub, targetId);
+  }
+
+  @Get('me/followers')
+  @UseGuards(JwtAuthGuard)
+  async getFollowers(@Request() req: any) {
+    return this.usersService.getFollowers(req.user.sub);
+  }
+
+  @Get('me/following')
+  @UseGuards(JwtAuthGuard)
+  async getFollowing(@Request() req: any) {
+    return this.usersService.getFollowing(req.user.sub);
+  }
+
+  @Get('me/suggestions')
+  @UseGuards(JwtAuthGuard)
+  async getSuggestions(@Request() req: any) {
+    return this.usersService.getSuggestedUsers(req.user.sub);
   }
 }

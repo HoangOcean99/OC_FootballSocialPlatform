@@ -7,6 +7,7 @@ import { useAuthStore } from '@/store/useAuthStore';
 import { useRouter } from 'next/navigation';
 import { placeBet, fetchUserProfile } from '@/lib/api';
 import toast from 'react-hot-toast';
+import { useTranslations } from 'next-intl';
 
 interface BetModalProps {
   isOpen: boolean;
@@ -24,6 +25,7 @@ export default function BetModal({ isOpen, onClose, matchId, matchTitle, betType
   const router = useRouter();
   const [wager, setWager] = useState<number>(100);
   const [loading, setLoading] = useState(false);
+  const t = useTranslations('Predictions');
 
   useEffect(() => {
     if (isOpen) {
@@ -32,29 +34,30 @@ export default function BetModal({ isOpen, onClose, matchId, matchTitle, betType
   }, [isOpen, existingBet]);
 
   const getBetLabel = () => {
+    const [homeTeam, awayTeam] = matchTitle.split(' vs ');
     switch (betType) {
-      case 'HOME_WIN': return 'Chủ thắng';
-      case 'DRAW': return 'Hòa';
-      case 'AWAY_WIN': return 'Khách thắng';
-      case 'EXACT_SCORE': return 'Tỉ số chính xác';
+      case 'HOME_WIN': return t('team_win', { team: homeTeam || t('home_team_default') });
+      case 'DRAW': return t('draw');
+      case 'AWAY_WIN': return t('team_win', { team: awayTeam || t('away_team_default') });
+      case 'EXACT_SCORE': return t('exact_score');
     }
   };
 
   const currentXp = user?.xp || 0;
   
   const handleBet = async () => {
-    if (wager <= 0) return toast.error('Số XP cược phải lớn hơn 0');
+    if (wager <= 0) return toast.error(t('err_wager_zero'));
     
     const previousWager = existingBet ? existingBet.wager : 0;
     const netCost = wager - previousWager;
     if (netCost > 0 && netCost > currentXp) {
-      return toast.error('Số dư XP không đủ');
+      return toast.error(t('err_insufficient_xp'));
     }
 
     setLoading(true);
     try {
       await placeBet(matchId, betType, wager);
-      toast.success('Đặt cược thành công!');
+      toast.success(t('bet_success'));
       
       // Update local state by refetching profile
       if (user?.username) {
@@ -101,7 +104,7 @@ export default function BetModal({ isOpen, onClose, matchId, matchTitle, betType
           onClick={e => e.stopPropagation()}
         >
           <div className="flex items-center justify-between px-6 py-4 border-b border-white/5 bg-white/[0.02]">
-            <h3 className="font-bold text-white text-lg">Xác nhận cược</h3>
+            <h3 className="font-bold text-white text-lg">{t('confirm_bet_title')}</h3>
             <button onClick={onClose} className="p-2 -mr-2 text-gray-400 hover:text-white transition-colors">
               <X className="w-5 h-5" />
             </button>
@@ -109,19 +112,19 @@ export default function BetModal({ isOpen, onClose, matchId, matchTitle, betType
 
           <div className="p-6 space-y-6">
             <div className="text-center space-y-1">
-                <h2 className="text-2xl font-black text-white">{existingBet ? 'Cập Nhật Cược' : 'Đặt Cược'}</h2>
+                <h2 className="text-2xl font-black text-white">{existingBet ? t('update_bet') : t('place_bet')}</h2>
                 <p className="text-sm text-gray-400">{matchTitle}</p>
               <p className="text-xl font-black text-emerald-400 uppercase tracking-wide">{getBetLabel()}</p>
               <div className="inline-block px-3 py-1 bg-white/5 rounded-full text-sm font-bold text-gray-300 mt-2">
-                Tỷ lệ ăn: <span className="text-amber-400">x{odds.toFixed(2)}</span>
+                {t('odds')}: <span className="text-amber-400">x{odds.toFixed(2)}</span>
               </div>
             </div>
 
             <div className="space-y-3">
               <div className="flex justify-between text-sm">
-                <span className="text-gray-400">Nhập số XP cược:</span>
+                <span className="text-gray-400">{t('enter_xp')}</span>
                 <span className="text-amber-500 font-bold flex items-center gap-1">
-                  <Coins className="w-4 h-4" /> Dư: {currentXp.toLocaleString()}
+                  <Coins className="w-4 h-4" /> {t('balance')} {currentXp.toLocaleString()}
                 </span>
               </div>
               <input 
@@ -150,7 +153,7 @@ export default function BetModal({ isOpen, onClose, matchId, matchTitle, betType
             </div>
 
             <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-4 flex justify-between items-center">
-              <span className="text-emerald-400/80 text-sm font-bold">Dự kiến nhận:</span>
+              <span className="text-emerald-400/80 text-sm font-bold">{t('potential_win')}</span>
               <span className="text-emerald-400 font-black text-xl">+{potentialWin.toLocaleString()} XP</span>
             </div>
 
@@ -159,7 +162,7 @@ export default function BetModal({ isOpen, onClose, matchId, matchTitle, betType
                 disabled={loading}
                 className="w-full py-3.5 rounded-xl bg-amber-500 text-amber-950 font-black hover:bg-amber-400 transition-all shadow-[0_0_20px_rgba(245,158,11,0.2)] hover:shadow-[0_0_30px_rgba(245,158,11,0.4)] disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-wider"
               >
-                {loading ? 'Đang xử lý...' : existingBet ? 'Lưu Thay Đổi' : 'Chốt Đơn'}
+                {loading ? t('processing') : existingBet ? t('save_changes') : t('confirm_button')}
               </button>
           </div>
         </motion.div>

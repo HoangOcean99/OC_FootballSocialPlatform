@@ -12,7 +12,7 @@ export class Comment implements Omit<IComment, 'id' | 'createdAt' | 'replies'> {
   @Prop({ type: Object, required: true })
   author: PostAuthor;
 
-  @Prop({ required: true })
+  @Prop({ default: '' })
   content: string;
 
   @Prop()

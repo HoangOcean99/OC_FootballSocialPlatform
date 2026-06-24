@@ -156,4 +156,27 @@ export class CommunitiesController {
   async resignAdmin(@Request() req: any, @Param('id') id: string) {
     return this.communitiesService.resignAdmin(id, req.user.sub);
   }
+
+  @Get(':id/messages')
+  @UseGuards(JwtAuthGuard)
+  async getCommunityMessages(@Param('id') id: string, @Query('limit') limit?: string) {
+    const l = limit ? parseInt(limit, 10) : 50;
+    return this.communitiesService.getCommunityMessages(id, l);
+  }
+
+  @Post(':id/messages')
+  @UseGuards(JwtAuthGuard)
+  async sendCommunityMessage(
+    @Request() req: any,
+    @Param('id') id: string,
+    @Body('content') content: string,
+    @Body('imageUrl') imageUrl?: string,
+  ) {
+    const message = await this.communitiesService.saveChatMessage(id, req.user.sub, content, imageUrl);
+    // Note: EventsGateway should be injected into CommunitiesController if not using service.
+    // Wait, let's just let the CommunitiesController use EventsGateway?
+    // Let me check if EventsGateway is injected. It's not.
+    // I should inject it in the controller, or better, the service.
+    return message;
+  }
 }

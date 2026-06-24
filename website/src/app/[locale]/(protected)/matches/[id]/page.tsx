@@ -4,6 +4,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { fetchMatchDetails } from '@/lib/api';
 import { ArrowLeft, Clock, MapPin, Loader2, Info } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useTranslations } from 'next-intl';
 
 export default function MatchDetailsPage() {
   const { id, locale } = useParams();
@@ -11,6 +12,8 @@ export default function MatchDetailsPage() {
   const [details, setDetails] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('events'); // events, lineups, stats
+  const t = useTranslations('Matches');
+  const tHome = useTranslations('Home');
 
   useEffect(() => {
     let intervalId: NodeJS.Timeout | null = null;
@@ -56,10 +59,10 @@ export default function MatchDetailsPage() {
     return (
       <div className="flex flex-col items-center justify-center h-[50vh] text-center">
         <Info className="w-16 h-16 text-gray-600 mb-4" />
-        <h2 className="text-xl font-bold text-white mb-2">{locale === 'vi' ? 'Không tìm thấy trận đấu' : 'Match not found'}</h2>
-        <p className="text-gray-400 mb-6">{locale === 'vi' ? 'Trận đấu này không tồn tại hoặc đã bị xóa.' : 'This match does not exist or has been removed.'}</p>
+        <h2 className="text-xl font-bold text-white mb-2">{locale === 'vi' ? 'Không tìm thấy trận đấu' : locale === 'ja' ? '試合が見つかりません' : 'Match not found'}</h2>
+        <p className="text-gray-400 mb-6">{locale === 'vi' ? 'Trận đấu này không tồn tại hoặc đã bị xóa.' : locale === 'ja' ? 'この試合は存在しないか、削除されました。' : 'This match does not exist or has been removed.'}</p>
         <button onClick={() => router.back()} className="px-6 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-white font-bold transition">
-          {locale === 'vi' ? 'Quay lại' : 'Go back'}
+          {t('back_btn')}
         </button>
       </div>
     );
@@ -73,9 +76,11 @@ export default function MatchDetailsPage() {
   const matchState = competition?.status?.type?.state;
   let status = competition?.status?.type?.shortDetail || '';
   if (matchState === 'pre') {
-    status = locale === 'vi' ? 'Sắp diễn ra' : 'Upcoming';
+    status = t('status_scheduled');
   } else if (matchState === 'post') {
-    status = locale === 'vi' ? 'Kết thúc' : 'Full Time';
+    status = t('status_full_time');
+  } else if (matchState === 'in') {
+    status = t('status_live');
   }
 
   const venue = details.gameInfo?.venue?.fullName || 'Unknown Stadium';
@@ -90,13 +95,14 @@ export default function MatchDetailsPage() {
 
   const getEmptyMessage = (type: string) => {
     const isUpcoming = details.header?.competitions?.[0]?.status?.type?.state === 'pre';
-    if (isUpcoming) return locale === 'vi' ? 'Trận đấu chưa diễn ra.' : 'Match has not started yet.';
-    return locale === 'vi' ? `Chưa có thông tin ${type}.` : `${type} not available yet.`;
+    if (type === 'events') return isUpcoming ? t('status_scheduled') : t('empty_events');
+    if (type === 'stats') return isUpcoming ? t('status_scheduled') : t('empty_stats');
+    return t('empty_events');
   };
 
   const renderEvents = () => {
     if (!details.keyEvents || details.keyEvents.length === 0) {
-      return <div className="text-center text-gray-500 py-10">{getEmptyMessage('diễn biến')}</div>;
+      return <div className="text-center text-gray-500 py-10">{getEmptyMessage('events')}</div>;
     }
 
     return (
@@ -125,22 +131,22 @@ export default function MatchDetailsPage() {
             cardBg = 'bg-emerald-500/10 border-emerald-500/30';
             textColor = 'text-emerald-400';
             iconContent = <span className="text-emerald-400 text-lg drop-shadow-[0_0_8px_rgba(16,185,129,0.8)]">⚽</span>;
-            displayTypeLabel = 'BÀN THẮNG';
+            displayTypeLabel = tHome('goal');
           } else if (isRedCard) {
             cardBg = 'bg-red-500/10 border-red-500/30';
             textColor = 'text-red-400';
             iconContent = <span className="w-3 h-4 bg-red-500 rounded-sm shadow-[0_0_8px_rgba(239,68,68,0.6)] border border-white/20"></span>;
-            displayTypeLabel = 'THẺ ĐỎ';
+            displayTypeLabel = tHome('red_card');
           } else if (isYellowCard) {
             cardBg = 'bg-yellow-500/10 border-yellow-500/30';
             textColor = 'text-yellow-400';
             iconContent = <span className="w-3 h-4 bg-yellow-500 rounded-sm shadow-[0_0_8px_rgba(234,179,8,0.6)] border border-white/20"></span>;
-            displayTypeLabel = 'THẺ VÀNG';
+            displayTypeLabel = tHome('yellow_card');
           } else if (isSub) {
             cardBg = 'bg-blue-500/10 border-blue-500/30';
             textColor = 'text-blue-400';
             iconContent = <span className="text-blue-400 text-lg">🔃</span>;
-            displayTypeLabel = 'THAY NGƯỜI';
+            displayTypeLabel = locale === 'vi' ? 'THAY NGƯỜI' : locale === 'ja' ? '交代' : 'SUBSTITUTION';
           }
 
           const participantName = event.participants?.[0]?.athlete?.displayName;
@@ -163,7 +169,7 @@ export default function MatchDetailsPage() {
             remainingText = remainingText.replace(/,([^\s,])/g, ', $1');
 
             // 1. Extract prefix like "Bàn thắng!" to its own line
-            const prefixRegex = /^(Bàn thắng!|Goal!|Phạt đền!|Phản lưới nhà!)\s*/i;
+            const prefixRegex = /^(Bàn thắng!|Goal!|Phạt đền!|Phản lưới nhà!|ゴール！|ペナルティ！|オウンゴール！)\s*/i;
             const prefixMatch = remainingText.match(prefixRegex);
             if (prefixMatch) {
               elements.push(<span key="prefix" className="block text-emerald-400 font-bold mb-1 text-sm uppercase tracking-wide">{prefixMatch[1]}</span>);
@@ -419,7 +425,7 @@ export default function MatchDetailsPage() {
           <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-6">
             <div className="flex items-center gap-3 mb-4 pb-4 border-b border-white/10">
               <img src={homeTeam.team.logos?.[0]?.href || homeTeam.team.logo} alt={homeTeam.team.displayName} className="w-6 h-6 object-contain" />
-              <h3 className="font-bold text-white">Dự bị {homeTeam.team.displayName}</h3>
+              <h3 className="font-bold text-white">{t('bench_title')} {homeTeam.team.displayName}</h3>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-4 gap-x-2">
               {homeRoster.filter((r: any) => !r.starter).map((p: any, i: number) => (
@@ -443,7 +449,7 @@ export default function MatchDetailsPage() {
           <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-6">
             <div className="flex items-center gap-3 mb-4 pb-4 border-b border-white/10">
               <img src={awayTeam.team.logos?.[0]?.href || awayTeam.team.logo} alt={awayTeam.team.displayName} className="w-6 h-6 object-contain" />
-              <h3 className="font-bold text-white">Dự bị {awayTeam.team.displayName}</h3>
+              <h3 className="font-bold text-white">{t('bench_title')} {awayTeam.team.displayName}</h3>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-4 gap-x-2">
               {awayRoster.filter((r: any) => !r.starter).map((p: any, i: number) => (
@@ -470,7 +476,7 @@ export default function MatchDetailsPage() {
 
   const renderStats = () => {
     if (!details.boxscore || !details.boxscore.teams) {
-      return <div className="text-center text-gray-500 py-10">{getEmptyMessage('thống kê')}</div>;
+      return <div className="text-center text-gray-500 py-10">{getEmptyMessage('stats')}</div>;
     }
 
     const homeStats = details.boxscore.teams.find((t: any) => t.team.id === homeTeam.team.id)?.statistics || [];
@@ -489,11 +495,16 @@ export default function MatchDetailsPage() {
           const homePct = (homeVal / total) * 100;
           const awayPct = (awayVal / total) * 100;
 
+          const getStatLabel = (lbl: string) => {
+            const mapped = t(`stat_${lbl.toLowerCase().replace(/ /g, '_')}`);
+            return mapped === `Matches.stat_${lbl.toLowerCase().replace(/ /g, '_')}` ? lbl : mapped;
+          };
+
           return (
             <div key={i}>
               <div className="flex justify-between items-center text-sm font-bold text-white mb-2">
                 <span>{stat.home}</span>
-                <span className="text-gray-400 capitalize">{stat.label}</span>
+                <span className="text-gray-400 capitalize">{getStatLabel(stat.label)}</span>
                 <span>{stat.away}</span>
               </div>
               <div className="flex h-2 bg-white/5 rounded-full overflow-hidden gap-1">
@@ -515,7 +526,7 @@ export default function MatchDetailsPage() {
         
         <div className="relative max-w-5xl mx-auto">
           <button onClick={() => router.back()} className="flex items-center gap-2 text-gray-400 hover:text-white mb-8 transition">
-            <ArrowLeft className="w-5 h-5" /> Trở về
+            <ArrowLeft className="w-5 h-5" /> {t('back_btn')}
           </button>
 
           <div className="text-center mb-6">
@@ -563,7 +574,7 @@ export default function MatchDetailsPage() {
       <div className="max-w-5xl mx-auto px-6">
         {/* Tabs */}
         <div className="flex gap-2 border-b border-white/10 pb-px mb-8 overflow-x-auto scrollbar-none">
-          {[{ id: 'events', label: 'Diễn biến' }, { id: 'lineups', label: 'Đội hình' }, { id: 'stats', label: 'Thống kê' }].map(tab => (
+          {[{ id: 'events', label: t('tab_events') }, { id: 'lineups', label: t('tab_lineups') }, { id: 'stats', label: t('tab_stats') }].map(tab => (
             <button 
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}

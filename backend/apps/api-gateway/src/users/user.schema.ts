@@ -117,6 +117,13 @@ export class User implements Omit<IUserProfile, 'id'> {
   @Prop({ type: [String], default: [] })
   communityEmojis: string[];
 
+  // Follow System
+  @Prop({ type: [String], default: [] })
+  followers: string[];
+
+  @Prop({ type: [String], default: [] })
+  following: string[];
+
   // Keep fields for Predictor
   @Prop({ default: 0 })
   accuracy: number;

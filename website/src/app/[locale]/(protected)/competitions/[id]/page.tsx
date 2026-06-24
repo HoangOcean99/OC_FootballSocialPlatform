@@ -6,19 +6,22 @@ import { ChevronLeft, ChevronRight, Trophy, Users, BarChart3, CalendarDays, Cloc
 import { fetchCompetitionDetails, fetchCompetitionStandings, fetchCompetitionMatches } from '@/lib/api';
 import { Competition, StandingEntry, Match } from '@football-fan/shared-types';
 import MatchCard from '@/components/MatchCard'; // Assuming we have a MatchCard component, or we can just render matches similar to matches/page.tsx
+import { useTranslations, useLocale } from 'next-intl';
 
 export default function CompetitionDetailsPage() {
   const { id } = useParams() as { id: string };
   const router = useRouter();
+  const t = useTranslations('Competitions');
+  const locale = useLocale();
   
   const TRANSLATED_ROUNDS: Record<string, string> = {
-    'round-of-16': 'Vòng 1/8',
-    'quarterfinals': 'Vòng Tứ kết',
-    'semifinals': 'Vòng Bán kết',
-    '3rd-place-match': 'Tranh hạng ba',
-    'final': 'Chung kết',
-    'knockout-round-play-offs': 'Vòng Play-off',
-    'round-of-32': 'Vòng 1/16'
+    'round-of-16': t('round_16'),
+    'quarterfinals': t('round_quarter'),
+    'semifinals': t('round_semi'),
+    '3rd-place-match': t('round_3rd'),
+    'final': t('round_final'),
+    'knockout-round-play-offs': t('round_playoff'),
+    'round-of-32': t('round_32')
   };
   
   const [comp, setComp] = useState<Competition | null>(null);
@@ -42,9 +45,9 @@ export default function CompetitionDetailsPage() {
     const rounds = Array.from(new Set(matches.map(m => TRANSLATED_ROUNDS[m.round || ''] || m.round || ''))).filter(Boolean) as string[];
     const months = Array.from(new Set(matches.map(m => {
       const d = new Date(m.kickoff);
-      return `Tháng ${d.getMonth() + 1}/${d.getFullYear()}`;
+      return `${t('month')} ${d.getMonth() + 1}/${d.getFullYear()}`;
     }))) as string[];
-    const days = Array.from(new Set(matches.map(m => new Date(m.kickoff).toLocaleDateString('vi-VN')))) as string[];
+    const days = Array.from(new Set(matches.map(m => new Date(m.kickoff).toLocaleDateString(locale)))) as string[];
     const weeks = Array.from(new Set(matches.map(m => {
       const d = new Date(m.kickoff);
       const day = d.getDay();
@@ -52,7 +55,7 @@ export default function CompetitionDetailsPage() {
       const startOfWeek = new Date(d.setDate(diff));
       const endOfWeek = new Date(startOfWeek);
       endOfWeek.setDate(startOfWeek.getDate() + 6);
-      return `${startOfWeek.toLocaleDateString('vi-VN')} - ${endOfWeek.toLocaleDateString('vi-VN')}`;
+      return `${startOfWeek.toLocaleDateString(locale)} - ${endOfWeek.toLocaleDateString(locale)}`;
     }))) as string[];
     return { availableRounds: rounds, availableMonths: months, availableDays: days, availableWeeks: weeks };
   }, [matches]);
@@ -71,7 +74,7 @@ export default function CompetitionDetailsPage() {
       if (parts.length === 3) {
         const d = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
         d.setDate(d.getDate() + step);
-        setMatchFilterValue(d.toLocaleDateString('vi-VN'));
+        setMatchFilterValue(d.toLocaleDateString(locale));
         setCalendarDate(new Date(d));
       }
       return;
@@ -89,7 +92,7 @@ export default function CompetitionDetailsPage() {
     else if (matchFilterType === 'month') setMatchFilterValue(availableMonths[0] || '');
     else if (matchFilterType === 'week') setMatchFilterValue(availableWeeks[0] || '');
     else if (matchFilterType === 'day') {
-      const todayStr = new Date().toLocaleDateString('vi-VN');
+      const todayStr = new Date().toLocaleDateString(locale);
       setMatchFilterValue(availableDays.includes(todayStr) ? todayStr : availableDays[0] || todayStr);
       setCalendarDate(new Date());
     }
@@ -102,10 +105,10 @@ export default function CompetitionDetailsPage() {
       if (matchFilterType === 'round') return (TRANSLATED_ROUNDS[m.round || ''] || m.round || '') === matchFilterValue;
       if (matchFilterType === 'month') {
         const d = new Date(m.kickoff);
-        return `Tháng ${d.getMonth() + 1}/${d.getFullYear()}` === matchFilterValue;
+        return `${t('month')} ${d.getMonth() + 1}/${d.getFullYear()}` === matchFilterValue;
       }
       if (matchFilterType === 'day') {
-        return new Date(m.kickoff).toLocaleDateString('vi-VN') === matchFilterValue;
+        return new Date(m.kickoff).toLocaleDateString(locale) === matchFilterValue;
       }
       if (matchFilterType === 'week') {
         const d = new Date(m.kickoff);
@@ -114,7 +117,7 @@ export default function CompetitionDetailsPage() {
         const startOfWeek = new Date(d.setDate(diff));
         const endOfWeek = new Date(startOfWeek);
         endOfWeek.setDate(startOfWeek.getDate() + 6);
-        return `${startOfWeek.toLocaleDateString('vi-VN')} - ${endOfWeek.toLocaleDateString('vi-VN')}` === matchFilterValue;
+        return `${startOfWeek.toLocaleDateString(locale)} - ${endOfWeek.toLocaleDateString(locale)}` === matchFilterValue;
       }
       return true;
     });
@@ -126,7 +129,7 @@ export default function CompetitionDetailsPage() {
       const d = new Date(m.kickoff);
       // Create a sortable key like YYYY-MM-DD using local time
       const sortKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-      const displayKey = d.toLocaleDateString('vi-VN', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' });
+      const displayKey = d.toLocaleDateString(locale, { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' });
       const compositeKey = `${sortKey}|${displayKey}`;
       if (!groups[compositeKey]) groups[compositeKey] = [];
       groups[compositeKey].push(m);
@@ -173,7 +176,7 @@ export default function CompetitionDetailsPage() {
           team2: match.awayTeam,
           leg1: !isLeg2 ? match : null,
           leg2: isLeg2 ? match : null,
-          isSingleLeg: roundName === 'Chung kết' || roundName === 'Final',
+          isSingleLeg: roundName === t('round_final') || roundName === 'Final',
           note: match.note
         });
       }
@@ -241,7 +244,7 @@ export default function CompetitionDetailsPage() {
             className="group flex items-center gap-2 px-4 py-2 mb-6 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 text-gray-400 hover:text-white transition-all backdrop-blur-md self-start w-auto"
           >
             <ChevronLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-            <span className="text-sm font-bold">Quay lại</span>
+            <span className="text-sm font-bold">{t('btn_back')}</span>
           </button>
           
           <div className="flex flex-col md:flex-row md:items-center gap-6">
@@ -278,7 +281,7 @@ export default function CompetitionDetailsPage() {
                   className="bg-white/10 border border-white/20 text-white text-sm rounded-full focus:ring-emerald-500 focus:border-emerald-500 block px-4 py-1 hover:bg-white/20 transition-colors backdrop-blur-md cursor-pointer outline-none font-bold"
                 >
                   {AVAILABLE_SEASONS.map(season => (
-                    <option key={season} value={season} className="bg-gray-900 text-white font-bold">Năm {season}</option>
+                    <option key={season} value={season} className="bg-gray-900 text-white font-bold">{t('year', { year: season })}</option>
                   ))}
                 </select>
               </div>
@@ -299,7 +302,7 @@ export default function CompetitionDetailsPage() {
             }`}
           >
             <BarChart3 className="w-4 h-4" />
-            Bảng xếp hạng
+            {t('tab_standings')}
           </button>
           
           {isTournament && (
@@ -312,7 +315,7 @@ export default function CompetitionDetailsPage() {
               }`}
             >
               <Trophy className="w-4 h-4" />
-              Vòng Knockout
+              {t('tab_knockout')}
             </button>
           )}
 
@@ -325,7 +328,7 @@ export default function CompetitionDetailsPage() {
             }`}
           >
             <CalendarDays className="w-4 h-4" />
-            Lịch thi đấu
+            {t('tab_matches')}
           </button>
         </div>
 
@@ -344,11 +347,11 @@ export default function CompetitionDetailsPage() {
                     <button 
                       onClick={() => setStandingsViewMode('full')}
                       className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-colors ${standingsViewMode === 'full' ? 'bg-white/10 text-white shadow-sm' : 'text-gray-500 hover:text-white hover:bg-white/[0.02]'}`}
-                    >Đầy đủ</button>
+                    >{t('view_full')}</button>
                     <button 
                       onClick={() => setStandingsViewMode('compact')}
                       className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-colors ${standingsViewMode === 'compact' ? 'bg-white/10 text-white shadow-sm' : 'text-gray-500 hover:text-white hover:bg-white/[0.02]'}`}
-                    >Thu gọn</button>
+                    >{t('view_compact')}</button>
                   </div>
                   <div className={standingsViewMode === 'compact' ? 'grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-6' : 'space-y-8 bg-white/[0.02] border border-white/10 rounded-3xl overflow-hidden'}>
                     {standings.map((group: any, gIndex: number) => (
@@ -474,7 +477,7 @@ export default function CompetitionDetailsPage() {
                           <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/0 via-emerald-500/5 to-emerald-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
                           
                           <div className="flex justify-between items-center mb-4 border-b border-white/5 pb-3">
-                             <span className="text-[10px] text-gray-500 font-bold uppercase tracking-widest bg-white/[0.03] px-2 py-1 rounded">Cặp đấu</span>
+                             <span className="text-[10px] text-gray-500 font-bold uppercase tracking-widest bg-white/[0.03] px-2 py-1 rounded">{t('matchup')}</span>
                              {tie.note && <span className="text-[10px] text-emerald-400 font-bold max-w-[200px] truncate bg-emerald-500/10 px-2 py-1 rounded border border-emerald-500/20" title={tie.note}>{tie.note}</span>}
                           </div>
                           <div className="grid grid-cols-[1fr_auto] gap-4 items-center">
@@ -493,7 +496,7 @@ export default function CompetitionDetailsPage() {
                               {/* Lượt 1 */}
                               {!(tie.isSingleLeg || (!tie.leg2 && !tie.leg1?.note?.toLowerCase().includes('leg'))) && (
                                 <div className="flex flex-col items-center border-r border-white/5 pr-4 relative">
-                                  <span className="text-[9px] text-gray-500 uppercase font-black tracking-widest mb-3">Lượt 1</span>
+                                  <span className="text-[9px] text-gray-500 uppercase font-black tracking-widest mb-3">{t('leg_1')}</span>
                                   <span className={`text-base font-black ${tie.leg1 && tie.leg1.homeScore > tie.leg1.awayScore ? 'text-gray-300' : 'text-gray-500'}`}>{tie.leg1?.status === 'SCHEDULED' ? '-' : (tie.leg1?.homeTeam.id === tie.team1.id ? tie.leg1?.homeScore : tie.leg1?.awayScore) ?? '-'}</span>
                                   <span className={`text-base font-black mt-4 ${tie.leg1 && tie.leg1.awayScore > tie.leg1.homeScore ? 'text-gray-300' : 'text-gray-500'}`}>{tie.leg1?.status === 'SCHEDULED' ? '-' : (tie.leg1?.homeTeam.id === tie.team2.id ? tie.leg1?.homeScore : tie.leg1?.awayScore) ?? '-'}</span>
                                 </div>
@@ -501,14 +504,14 @@ export default function CompetitionDetailsPage() {
                               {/* Lượt 2 */}
                               {!(tie.isSingleLeg || (!tie.leg2 && !tie.leg1?.note?.toLowerCase().includes('leg'))) && (
                                 <div className="flex flex-col items-center border-r border-white/5 pr-4 relative">
-                                  <span className="text-[9px] text-gray-500 uppercase font-black tracking-widest mb-3">Lượt 2</span>
+                                  <span className="text-[9px] text-gray-500 uppercase font-black tracking-widest mb-3">{t('leg_2')}</span>
                                   <span className={`text-base font-black ${tie.leg2 && tie.leg2.homeScore > tie.leg2.awayScore ? 'text-gray-300' : 'text-gray-500'}`}>{tie.leg2?.status === 'SCHEDULED' ? '-' : (tie.leg2?.homeTeam.id === tie.team1.id ? tie.leg2?.homeScore : tie.leg2?.awayScore) ?? '-'}</span>
                                   <span className={`text-base font-black mt-4 ${tie.leg2 && tie.leg2.awayScore > tie.leg2.homeScore ? 'text-gray-300' : 'text-gray-500'}`}>{tie.leg2?.status === 'SCHEDULED' ? '-' : (tie.leg2?.homeTeam.id === tie.team2.id ? tie.leg2?.homeScore : tie.leg2?.awayScore) ?? '-'}</span>
                                 </div>
                               )}
                               {/* Tổng hoặc Kết quả 1 trận */}
                               <div className="flex flex-col items-center px-2">
-                                <span className="text-[9px] text-emerald-500 uppercase font-black tracking-widest mb-3">Kết quả</span>
+                                <span className="text-[9px] text-emerald-500 uppercase font-black tracking-widest mb-3">{t('result')}</span>
                                 {(() => {
                                   // Tính tổng
                                   const leg1T1 = tie.leg1 && tie.leg1.status !== 'SCHEDULED' ? (tie.leg1.homeTeam.id === tie.team1.id ? tie.leg1.homeScore : tie.leg1.awayScore) : 0;
@@ -547,17 +550,17 @@ export default function CompetitionDetailsPage() {
               className="space-y-6"
             >
               <div className="flex flex-col sm:flex-row sm:items-center gap-4 bg-white/[0.02] p-4 rounded-2xl border border-white/5">
-                <span className="text-sm font-bold text-gray-400">Lọc theo:</span>
+                <span className="text-sm font-bold text-gray-400">{t('filter_by')}</span>
                 <select 
                   className="bg-black/50 border border-white/10 rounded-lg px-4 py-2 text-sm text-white focus:outline-none focus:border-emerald-500/50"
                   value={matchFilterType}
                   onChange={(e) => setMatchFilterType(e.target.value as any)}
                 >
-                  <option value="all">Tất cả</option>
-                  <option value="round">Vòng đấu</option>
-                  <option value="month">Tháng</option>
-                  <option value="week">Tuần</option>
-                  <option value="day">Ngày</option>
+                  <option value="all">{t('filter_all')}</option>
+                  <option value="round">{t('filter_round')}</option>
+                  <option value="month">{t('month')}</option>
+                  <option value="week">{t('filter_week')}</option>
+                  <option value="day">{t('filter_day')}</option>
                 </select>
                 
                 {matchFilterType !== 'all' && (
@@ -575,10 +578,10 @@ export default function CompetitionDetailsPage() {
                       onClick={() => setShowFilterDropdown(!showFilterDropdown)}
                     >
                       <span className="text-sm font-bold text-white group-hover:text-emerald-400 transition-colors truncate max-w-[200px]">
-                        {matchFilterValue || 'Chọn...'}
+                        {matchFilterValue || t('select_placeholder')}
                       </span>
                       <span className="text-[10px] text-gray-500 uppercase tracking-widest group-hover:text-gray-300 transition-colors">
-                        {matchFilterType === 'round' ? 'Vòng đấu' : matchFilterType === 'month' ? 'Tháng' : matchFilterType === 'week' ? 'Tuần' : 'Ngày'}
+                        {matchFilterType === 'round' ? t('filter_round') : matchFilterType === 'month' ? t('month') : matchFilterType === 'week' ? t('filter_week') : t('filter_day')}
                       </span>
 
                       {/* Dropdown */}
@@ -709,16 +712,17 @@ export default function CompetitionDetailsPage() {
                                      <Clock className="w-3 h-3 text-emerald-400" /> {timeStr}
                                    </div>
                                    <span className="text-xs text-gray-400 font-medium truncate max-w-[150px]">{match.round || 'Vòng đấu'}</span>
+                                   <span className="text-xs text-gray-400 font-medium truncate max-w-[150px]">{match.round || t('round')}</span>
                                  </div>
                                  <div className="flex items-center gap-2">
                                     {match.status === 'LIVE' || match.status === 'HT' ? (
-                                      <span className="text-[10px] bg-red-500/20 text-red-500 px-2 py-1 rounded font-bold animate-pulse">Trực tiếp {match.minute ? `${match.minute}'` : ''}</span>
+                                      <span className="text-[10px] bg-red-500/20 text-red-500 px-2 py-1 rounded font-bold animate-pulse">{t('status_live')} {match.minute ? `${match.minute}'` : ''}</span>
                                     ) : match.status === 'FINISHED' ? (
-                                      <span className="text-[10px] bg-white/10 text-gray-400 px-2 py-1 rounded font-bold">Đã kết thúc</span>
+                                      <span className="text-[10px] bg-white/10 text-gray-400 px-2 py-1 rounded font-bold">{t('status_finished')}</span>
                                     ) : match.status === 'POSTPONED' ? (
-                                      <span className="text-[10px] bg-amber-500/20 text-amber-500 px-2 py-1 rounded font-bold">Hoãn</span>
+                                      <span className="text-[10px] bg-amber-500/20 text-amber-500 px-2 py-1 rounded font-bold">{t('status_postponed')}</span>
                                     ) : (
-                                      <span className="text-[10px] bg-blue-500/20 text-blue-400 px-2 py-1 rounded font-bold">Sắp tới</span>
+                                      <span className="text-[10px] bg-blue-500/20 text-blue-400 px-2 py-1 rounded font-bold">{t('status_scheduled')}</span>
                                     )}
                                  </div>
                                </div>

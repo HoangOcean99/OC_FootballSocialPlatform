@@ -1,18 +1,24 @@
 'use client';
 import { useEffect, useState, useRef } from 'react';
-import { Calendar, ChevronLeft, ChevronRight, Clock, Video } from 'lucide-react';
+import { Calendar, ChevronLeft, ChevronRight, Clock, Video, Filter } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { fetchAllMatches } from '@/lib/api';
 import { Match } from '@football-fan/shared-types';
+import CompetitionFilterModal from '@/components/CompetitionFilterModal';
+import { useTranslations } from 'next-intl';
 
 export default function MatchesPage() {
+  const t = useTranslations('Matches');
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('Tất cả');
+  const [activeTab, setActiveTab] = useState('all');
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [calendarDate, setCalendarDate] = useState<Date>(new Date());
   const dateInputRef = useRef<HTMLInputElement>(null);
+  
+  const [filterCompetition, setFilterCompetition] = useState<string>('all');
+  const [isCompModalOpen, setIsCompModalOpen] = useState(false);
 
   // Sync calendar with current date when opened
   useEffect(() => {
@@ -73,9 +79,9 @@ export default function MatchesPage() {
     compareDate.setHours(0, 0, 0, 0);
     
     const diffDays = Math.round((compareDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-    if (diffDays === 0) return 'Hôm nay';
-    if (diffDays === 1) return 'Ngày mai';
-    if (diffDays === -1) return 'Hôm qua';
+    if (diffDays === 0) return t('today');
+    if (diffDays === 1) return 'Ngày mai'; // We might want to translate this if needed
+    if (diffDays === -1) return 'Hôm qua'; // Same here
     
     const days = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
     return days[date.getDay()];
@@ -86,10 +92,13 @@ export default function MatchesPage() {
   };
 
   const filteredMatches = matches.filter(match => {
-    if (activeTab === 'Tất cả') return true;
-    if (activeTab === 'Trực tiếp') return match.status === 'LIVE' || match.status === 'HT';
-    if (activeTab === 'Đã xong') return match.status === 'FT' || match.status === 'FINISHED';
-    if (activeTab === 'Sắp tới') return match.status === 'SCHEDULED';
+    if (filterCompetition !== 'all') {
+      if (match.competition?.name !== filterCompetition) return false;
+    }
+    if (activeTab === 'all') return true;
+    if (activeTab === 'live') return match.status === 'LIVE' || match.status === 'HT';
+    if (activeTab === 'finished') return match.status === 'FT' || match.status === 'FINISHED';
+    if (activeTab === 'upcoming') return match.status === 'SCHEDULED';
     return true;
   });
 
@@ -100,16 +109,27 @@ export default function MatchesPage() {
         <div>
           <h1 className="text-3xl font-black text-white mb-2 flex items-center gap-3">
             <Calendar className="w-8 h-8 text-emerald-400" />
-            Lịch Thi Đấu & Kết Quả
+            {t('title')}
           </h1>
-          <p className="text-gray-400 text-sm">Cập nhật tỉ số trực tiếp và lịch thi đấu các giải</p>
+          <p className="text-gray-400 text-sm">{t('subtitle')}</p>
         </div>
         
-        {/* Date Selector */}
-        <div className="flex items-center gap-2 bg-white/[0.03] border border-white/10 rounded-xl p-1 relative">
-          <button onClick={() => changeDate(-1)} className="p-2 hover:bg-white/10 rounded-lg text-gray-400 transition-colors">
-            <ChevronLeft className="w-5 h-5" />
+        <div className="flex flex-col sm:flex-row gap-4 items-end sm:items-center">
+          {/* Competition Filter Button */}
+          <button 
+            onClick={() => setIsCompModalOpen(true)}
+            className="flex items-center gap-2 px-4 py-2.5 bg-[#080d14] rounded-xl border border-white/10 hover:border-emerald-500/50 transition-colors text-sm font-bold text-white flex-1 sm:flex-none justify-between"
+          >
+            <Filter className="w-4 h-4 text-emerald-400" />
+            <span className="truncate max-w-[150px]">{filterCompetition === 'all' ? t('tab_all') : filterCompetition}</span>
+            <ChevronRight className="w-4 h-4 text-gray-500" />
           </button>
+
+          {/* Date Selector */}
+          <div className="flex items-center gap-2 bg-white/[0.03] border border-white/10 rounded-xl p-1 relative">
+            <button onClick={() => changeDate(-1)} className="p-2 hover:bg-white/10 rounded-lg text-gray-400 transition-colors">
+              <ChevronLeft className="w-5 h-5" />
+            </button>
           
           <div 
             className="px-4 py-1 flex flex-col items-center min-w-[100px] cursor-pointer group"
@@ -202,7 +222,7 @@ export default function MatchesPage() {
                     }}
                     className="text-xs font-bold text-emerald-400 hover:text-emerald-300 transition"
                   >
-                    Trở về hôm nay
+                    {t('today')}
                   </button>
                 </div>
               </motion.div>
@@ -210,16 +230,22 @@ export default function MatchesPage() {
           )}
         </div>
       </div>
+      </div>
 
       {/* Tabs */}
       <div className="flex gap-2 border-b border-white/10 pb-px overflow-x-auto scrollbar-none">
-        {['Tất cả', 'Trực tiếp', 'Đã xong', 'Sắp tới'].map(tab => (
+        {[
+          { id: 'all', label: t('tab_all') },
+          { id: 'live', label: t('tab_live') },
+          { id: 'finished', label: t('tab_finished') },
+          { id: 'upcoming', label: t('tab_upcoming') }
+        ].map(tab => (
           <button 
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            className={`px-6 py-3 border-b-2 text-sm font-bold whitespace-nowrap transition-colors ${activeTab === tab ? 'border-emerald-500 text-emerald-400' : 'border-transparent text-gray-400 hover:text-white'}`}
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={`px-6 py-3 border-b-2 text-sm font-bold whitespace-nowrap transition-colors ${activeTab === tab.id ? 'border-emerald-500 text-emerald-400' : 'border-transparent text-gray-400 hover:text-white'}`}
           >
-            {tab}
+            {tab.label}
           </button>
         ))}
       </div>
@@ -227,9 +253,9 @@ export default function MatchesPage() {
       {/* Matches List */}
       <div className="space-y-4">
         {loading ? (
-          <div className="text-center text-gray-400 py-10">Đang tải trận đấu...</div>
+          <div className="text-center text-gray-400 py-10">...</div>
         ) : filteredMatches.length === 0 ? (
-          <div className="text-center text-gray-500 py-10">Không có trận đấu nào.</div>
+          <div className="text-center text-gray-500 py-10">{t('no_matches')}</div>
         ) : filteredMatches.map((match, i) => {
           const kickDate = new Date(match.kickoff);
           const matchTime = kickDate.toLocaleString('vi-VN', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }).replace(',', '');
@@ -257,7 +283,7 @@ export default function MatchesPage() {
                   {match.status === 'LIVE' ? (
                     <>
                       <span className="flex items-center gap-1.5 text-xs font-black text-red-500 uppercase tracking-widest animate-pulse">
-                        <span className="w-1.5 h-1.5 rounded-full bg-red-500" /> Đang diễn ra
+                        <span className="w-1.5 h-1.5 rounded-full bg-red-500" /> {t('live_now')}
                       </span>
                       {match.round && <span className="text-[10px] text-gray-500 mt-0.5 line-clamp-1 text-center">{match.round}</span>}
                       <span className="text-sm font-bold text-red-400 mt-1">{match.minute}'</span>
@@ -265,19 +291,19 @@ export default function MatchesPage() {
                   ) : match.status === 'HT' ? (
                     <>
                       <span className="flex items-center gap-1.5 text-xs font-black text-amber-500 uppercase tracking-widest">
-                        Nghỉ giữa hiệp
+                        {match.status === 'HT' ? 'HT' : match.status}
                       </span>
                       {match.round && <span className="text-[10px] text-gray-500 mt-0.5 line-clamp-1 text-center">{match.round}</span>}
                     </>
                   ) : match.status === 'SCHEDULED' ? (
                     <>
-                      <span className="text-xs font-black text-blue-400 text-center uppercase tracking-widest">Sắp diễn ra</span>
+                      <span className="text-xs font-black text-blue-400 text-center uppercase tracking-widest">{t('tab_upcoming')}</span>
                       {match.round && <span className="text-[10px] text-gray-500 mt-0.5 line-clamp-1 text-center">{match.round}</span>}
                       <span className="text-sm font-bold text-white mt-1.5 flex items-center gap-1.5"><Clock className="w-3.5 h-3.5 text-gray-500" /> {matchTime}</span>
                     </>
                   ) : (
                     <>
-                      <span className="text-xs font-black text-gray-500 text-center uppercase tracking-widest">Kết thúc</span>
+                      <span className="text-xs font-black text-gray-500 text-center uppercase tracking-widest">{t('ft')}</span>
                       {match.round && <span className="text-[10px] text-gray-500 mt-0.5 line-clamp-1 text-center">{match.round}</span>}
                       <span className="text-sm font-bold text-gray-400 mt-1.5 flex items-center gap-1.5"><Clock className="w-3.5 h-3.5 text-gray-600" /> {matchTime}</span>
                     </>
@@ -327,13 +353,21 @@ export default function MatchesPage() {
                 {/* Actions */}
                 <div className="w-full md:w-auto flex justify-center mt-2 md:mt-0 pt-3 md:pt-0 border-t md:border-t-0 border-white/10 md:pl-4">
                   <button className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white/5 hover:bg-emerald-500 hover:text-[#03060a] text-gray-300 text-sm font-bold transition-colors whitespace-nowrap">
-                    Chi tiết
+                    {t('btn_details')}
                   </button>
                 </div>
               </motion.div>
           );
         })}
       </div>
+
+      <CompetitionFilterModal 
+        isOpen={isCompModalOpen}
+        onClose={() => setIsCompModalOpen(false)}
+        availableCompetitions={Array.from(new Set(matches.map(m => m.competition?.name).filter(Boolean)))}
+        selectedCompetition={filterCompetition}
+        onSelect={setFilterCompetition}
+      />
     </div>
   );
 }

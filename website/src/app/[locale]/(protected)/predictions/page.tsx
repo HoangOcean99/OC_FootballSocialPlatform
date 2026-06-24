@@ -1,14 +1,19 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { Target, Trophy, Flame, Coins, CheckCircle2, Filter, Calendar, ChevronRight } from 'lucide-react';
+import { Target, Trophy, Flame, Coins, CheckCircle2, Filter, Calendar, ChevronRight, History } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { fetchPredictionsByDate, fetchTopPredictors, fetchMyBets, fetchUserProfile } from '@/lib/api';
 import { PredMatch, Predictor, UserBet } from '@football-fan/shared-types';
 import { useAuthStore } from '@/store/useAuthStore';
 import BetModal from '@/components/BetModal';
 import CompetitionFilterModal from '@/components/CompetitionFilterModal';
+import Link from 'next/link';
+import { useParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 
 export default function PredictionsPage() {
+  const t = useTranslations('Predictions');
+  const { locale } = useParams();
   const { user, updateUser } = useAuthStore();
   const [predictions, setPredictions] = useState<PredMatch[]>([]);
   const [leaderboard, setLeaderboard] = useState<Predictor[]>([]);
@@ -94,17 +99,22 @@ export default function PredictionsPage() {
     compareDate.setHours(0, 0, 0, 0);
     
     const diffDays = Math.round((compareDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-    if (diffDays === 0) return 'Hôm nay';
-    if (diffDays === 1) return 'Ngày mai';
-    if (diffDays === -1) return 'Hôm qua';
+    if (diffDays === 0) return t('date_today');
+    if (diffDays === 1) return t('date_tomorrow');
+    if (diffDays === -1) return t('date_yesterday');
     
-    const days = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
+    const days = [t('day_sun'), t('day_mon'), t('day_tue'), t('day_wed'), t('day_thu'), t('day_fri'), t('day_sat')];
     return days[date.getDay()];
   };
 
   const formatDisplayDate = (date: Date) => {
-    return `${date.getDate()} THG ${date.getMonth() + 1}`;
+    return `${date.getDate()} ${t('month_short')} ${date.getMonth() + 1}`;
   };
+
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const isNewDay = user?.lastPredictionDate !== todayStr;
+  const currentCount = isNewDay ? 0 : (user?.dailyPredictionsCount || 0);
+  const remainingPredictions = Math.max(0, 3 - currentCount) + (user?.extraPredictions || 0);
 
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-8 pb-20 flex flex-col xl:flex-row gap-8">
@@ -114,13 +124,19 @@ export default function PredictionsPage() {
           <div>
             <h1 className="text-3xl font-black text-white mb-2 flex items-center gap-3">
               <Target className="w-8 h-8 text-emerald-400" />
-              Sàn Cá Cược
+              {t('title').replace('🎯 ', '')}
             </h1>
-            <p className="text-gray-400 text-sm">Xuống tiền đặt cược vào đội bóng yêu thích để nhân X tài sản</p>
+            <p className="text-gray-400 text-sm">{t('subtitle')}</p>
           </div>
-          <div className="flex items-center gap-2 bg-emerald-500/10 text-emerald-500 px-4 py-2 rounded-xl border border-emerald-500/20 shrink-0">
-            <Target className="w-5 h-5" />
-            <span className="font-bold">Còn lại: {Math.max(0, 3 - (user?.dailyPredictionsCount || 0)) + (user?.extraPredictions || 0)} lượt</span>
+          <div className="flex flex-col sm:flex-row items-end sm:items-center gap-3">
+            <Link href={`/${locale}/predictions/history`} className="flex items-center gap-2 bg-white/5 hover:bg-white/10 text-white px-4 py-2 rounded-xl border border-white/10 transition-colors shrink-0">
+              <History className="w-5 h-5 text-amber-400" />
+              <span className="font-bold">{t('tab_my_bets')}</span>
+            </Link>
+            <div className="flex items-center gap-2 bg-emerald-500/10 text-emerald-500 px-4 py-2 rounded-xl border border-emerald-500/20 shrink-0">
+              <Target className="w-5 h-5" />
+              <span className="font-bold">{t('remaining_predictions', { count: remainingPredictions })}</span>
+            </div>
           </div>
         </div>
 
@@ -156,37 +172,32 @@ export default function PredictionsPage() {
           
           <div className="flex-1">
             <label className="text-xs text-gray-400 font-bold uppercase tracking-wider mb-2 flex items-center gap-1.5">
-              <Filter className="w-3.5 h-3.5" /> Giải đấu
+              <Filter className="w-3.5 h-3.5" /> {t('filter_comps')}
             </label>
             <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
               <button 
                 onClick={() => setIsCompModalOpen(true)}
                 className="flex items-center gap-2 px-4 py-2 bg-[#080d14] rounded-xl border border-white/10 hover:border-emerald-500/50 transition-colors text-sm font-bold text-white flex-1 sm:flex-none justify-between"
               >
-                <span className="truncate">{filterCompetition === 'all' ? 'Tất cả giải đấu' : filterCompetition}</span>
+                <span className="truncate">{filterCompetition === 'all' ? t('filter_all_comps') : filterCompetition}</span>
                 <ChevronRight className="w-4 h-4 text-gray-500" />
               </button>
               <div className="flex items-center gap-2 px-4 py-2 bg-emerald-500/10 text-emerald-500 rounded-xl border border-emerald-500/30 text-sm font-bold flex-1 sm:flex-none justify-center">
-                <span>Còn lại: {(() => {
-                  const todayStr = new Date().toISOString().slice(0, 10);
-                  const isNewDay = user?.lastPredictionDate !== todayStr;
-                  const count = isNewDay ? 0 : (user?.dailyPredictionsCount || 0);
-                  return Math.max(0, 3 - count) + (user?.extraPredictions || 0);
-                })()} lượt</span>
+                <span>{t('remaining_turns', { count: remainingPredictions })}</span>
               </div>
             </div>
           </div>
 
           <div className="flex-1">
             <label className="text-xs text-gray-400 font-bold uppercase tracking-wider mb-2 flex items-center gap-1.5">
-              <Filter className="w-3.5 h-3.5" /> Sắp xếp
+              <Filter className="w-3.5 h-3.5" /> {t('filter_sort')}
             </label>
             <select 
               value={sortOption}
               onChange={(e) => setSortOption(e.target.value as any)}
               className="w-full bg-[#080d14] border border-white/10 rounded-xl px-4 py-2.5 text-sm font-bold text-white focus:outline-none focus:border-emerald-500/50 appearance-none"
             >
-              <option value="status">Chưa đá ưu tiên</option>
+              <option value="status">{t('sort_upcoming')}</option>
               <option value="time">Theo thời gian</option>
             </select>
           </div>
@@ -279,7 +290,7 @@ export default function PredictionsPage() {
                     </span>
                   ) : (
                     <span className="flex items-center gap-1.5 text-xs font-bold text-gray-400 bg-gray-500/10 px-3 py-1 rounded-full border border-gray-500/20">
-                      ĐÃ KẾT THÚC
+                      {t('status_closed')}
                     </span>
                   )}
                 </div>
@@ -302,7 +313,7 @@ export default function PredictionsPage() {
                         ${myBet?.type === 'HOME_WIN' ? 'bg-amber-500 text-amber-950 border-amber-400 shadow-[0_0_15px_rgba(245,158,11,0.3)]' : 
                           pred.status !== 'OPEN' ? 'bg-white/5 border-white/5 text-gray-500 cursor-not-allowed' : 'bg-white/5 hover:bg-white/10 border-white/10 text-gray-300'}`}
                     >
-                      <span>Thắng</span>
+                      <span>{t('btn_win')}</span>
                       <span>{myBet?.type === 'HOME_WIN' ? <CheckCircle2 className="w-4 h-4" /> : `x${(pred.homeOdds || 2.0).toFixed(2)}`}</span>
                     </button>
                   </div>
@@ -310,7 +321,7 @@ export default function PredictionsPage() {
                   {/* Draw / Score */}
                   <div className="w-full sm:w-32 shrink-0 flex flex-col items-center justify-center gap-3">
                     <div className="text-center bg-[#080d14] py-2 px-4 rounded-xl border border-white/5 w-full">
-                      {pred.status === 'FINISHED' && pred.homeScore !== undefined && pred.awayScore !== undefined ? (
+                      {(pred.status === 'FINISHED' || pred.status === 'RESOLVED') && pred.homeScore !== undefined && pred.awayScore !== undefined ? (
                         <span className="block text-2xl font-black text-white mb-1 tracking-widest">{pred.homeScore} - {pred.awayScore}</span>
                       ) : (
                         <span className="block text-sm font-black text-gray-500 mb-1">VS</span>
@@ -324,7 +335,7 @@ export default function PredictionsPage() {
                         ${myBet?.type === 'DRAW' ? 'bg-amber-500 text-amber-950 border-amber-400 shadow-[0_0_15px_rgba(245,158,11,0.3)]' : 
                           pred.status !== 'OPEN' ? 'bg-white/5 border-white/5 text-gray-500 cursor-not-allowed' : 'bg-white/5 hover:bg-white/10 border-white/10 text-gray-300'}`}
                     >
-                      <span>Hòa</span>
+                      <span>{t('btn_draw')}</span>
                       <span>{myBet?.type === 'DRAW' ? <CheckCircle2 className="w-4 h-4" /> : `x${(pred.drawOdds || 3.0).toFixed(2)}`}</span>
                     </button>
                   </div>
@@ -346,16 +357,30 @@ export default function PredictionsPage() {
                         ${myBet?.type === 'AWAY_WIN' ? 'bg-amber-500 text-amber-950 border-amber-400 shadow-[0_0_15px_rgba(245,158,11,0.3)]' : 
                           pred.status !== 'OPEN' ? 'bg-white/5 border-white/5 text-gray-500 cursor-not-allowed' : 'bg-white/5 hover:bg-white/10 border-white/10 text-gray-300'}`}
                     >
-                      <span>Thắng</span>
+                      <span>{t('btn_win')}</span>
                       <span>{myBet?.type === 'AWAY_WIN' ? <CheckCircle2 className="w-4 h-4" /> : `x${(pred.awayOdds || 2.5).toFixed(2)}`}</span>
                     </button>
                   </div>
                 </div>
 
                 {myBet && (
-                  <div className="mt-4 py-3 px-4 rounded-xl bg-amber-500/10 border border-amber-500/20 flex justify-between items-center relative z-10">
-                    <span className="text-amber-500/80 text-sm font-bold">Bạn đã cược kèo này</span>
-                    <span className="text-amber-400 font-black text-lg">{myBet.wager.toLocaleString()} XP</span>
+                  <div className={`mt-4 py-3 px-4 rounded-xl border flex justify-between items-center relative z-10 ${
+                    myBet.status === 'WON' 
+                      ? 'bg-emerald-500/10 border-emerald-500/20' 
+                      : myBet.status === 'LOST'
+                      ? 'bg-red-500/10 border-red-500/20'
+                      : 'bg-amber-500/10 border-amber-500/20'
+                  }`}>
+                    <span className={`text-sm font-bold ${
+                      myBet.status === 'WON' ? 'text-emerald-500/80' : myBet.status === 'LOST' ? 'text-red-500/80' : 'text-amber-500/80'
+                    }`}>
+                      {myBet.status === 'WON' ? 'Dự đoán chính xác!' : myBet.status === 'LOST' ? 'Dự đoán chưa chính xác' : 'Bạn đã cược kèo này'}
+                    </span>
+                    <span className={`font-black text-lg ${
+                      myBet.status === 'WON' ? 'text-emerald-400' : myBet.status === 'LOST' ? 'text-red-400' : 'text-amber-400'
+                    }`}>
+                      {myBet.status === 'WON' ? `+${Math.floor(myBet.wager * myBet.odds).toLocaleString()} XP` : myBet.status === 'LOST' ? `-${myBet.wager.toLocaleString()} XP` : `${myBet.wager.toLocaleString()} XP`}
+                    </span>
                   </div>
                 )}
               </motion.div>
@@ -371,7 +396,7 @@ export default function PredictionsPage() {
         <div className="bg-[#0f1923] border border-white/10 rounded-3xl p-6 sticky top-24 shadow-2xl">
           <div className="flex items-center gap-3 mb-6">
             <Trophy className="w-6 h-6 text-amber-400" />
-            <h2 className="text-xl font-black text-white">Bảng Xếp Hạng</h2>
+            <h2 className="text-xl font-black text-white">{t('tab_leaderboard')}</h2>
           </div>
           
           <div className="space-y-3">
@@ -392,7 +417,7 @@ export default function PredictionsPage() {
                     <p className={`text-sm font-bold truncate ${isMe ? 'text-emerald-400' : 'text-gray-200'}`}>{leader.displayName}</p>
                   </div>
                   <div className="text-sm font-black text-amber-400 shrink-0">
-                    {leader.points.toLocaleString()} trận đúng
+                    {leader.points.toLocaleString()} {t('stats_win').toLowerCase()}
                   </div>
                 </div>
               );
@@ -400,7 +425,7 @@ export default function PredictionsPage() {
           </div>
 
           <button className="w-full mt-6 py-2 rounded-xl border border-white/10 text-gray-400 text-sm font-bold hover:bg-white/5 hover:text-white transition-colors">
-            Xem toàn bộ
+            {t('view_all')}
           </button>
         </div>
       </div>

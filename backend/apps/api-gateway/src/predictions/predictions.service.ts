@@ -85,13 +85,17 @@ export class PredictionsService {
                 if (updated) {
                   await existing.save();
                 }
+                
+                if (existing.status === 'FINISHED') {
+                  await this.resolveMatchBets(existing);
+                }
               } else {
               // Create new
               const baseHome = 1.5 + Math.random() * 2;
               const baseAway = 1.5 + Math.random() * 2;
               const baseDraw = 2.5 + Math.random() * 1.5;
               
-              await this.predMatchModel.create({
+              const newMatch = await this.predMatchModel.create({
                 ...matchQuery,
                 competition: compName,
                 status: mappedStatus,
@@ -105,6 +109,9 @@ export class PredictionsService {
                 xpReward: 1000,
                 ...(mappedStatus === 'FINISHED' || mappedStatus === 'LIVE' ? { homeScore, awayScore } : {})
               });
+              if (newMatch.status === 'FINISHED') {
+                await this.resolveMatchBets(newMatch);
+              }
               }
             } catch (err) {
               console.error('Error syncing individual match:', matchQuery.homeTeam, err);
@@ -130,6 +137,60 @@ export class PredictionsService {
         $lt: end.toISOString()
       } 
     }).exec();
+  }
+
+  async resolveMatchBets(match: PredictionMatchDocument) {
+    if (match.status !== 'FINISHED') return;
+    
+    // Determine actual outcome
+    let actualOutcome: 'HOME_WIN' | 'AWAY_WIN' | 'DRAW';
+    const homeScore = match.homeScore || 0;
+    const awayScore = match.awayScore || 0;
+    if (homeScore > awayScore) actualOutcome = 'HOME_WIN';
+    else if (homeScore < awayScore) actualOutcome = 'AWAY_WIN';
+    else actualOutcome = 'DRAW';
+
+    const pendingBets = await this.userBetModel.find({ matchId: match._id.toString(), status: 'PENDING' }).exec();
+    
+    for (const bet of pendingBets) {
+      const isWin = bet.type === actualOutcome;
+      bet.status = isWin ? 'WON' : 'LOST';
+      await bet.save();
+
+      const user = await this.usersService.findById(bet.userId);
+      if (user) {
+        user.predictionStats = user.predictionStats || { total: 0, correct: 0, accuracy: 0, streak: 0, bestStreak: 0, xpEarned: 0 };
+        user.predictionStats.total += 1;
+        
+        if (isWin) {
+          const winnings = Math.floor(bet.wager * bet.odds);
+          user.xp += winnings;
+          user.predictionStats.correct += 1;
+          user.predictionStats.xpEarned += winnings;
+          
+          user.stats = user.stats || { posts: 0, comments: 0, correctPredictions: 0, matchesWatched: 0 };
+          user.stats.correctPredictions += 1;
+          
+          user.predictionStats.streak += 1;
+          if (user.predictionStats.streak > user.predictionStats.bestStreak) {
+             user.predictionStats.bestStreak = user.predictionStats.streak;
+          }
+        } else {
+          user.predictionStats.streak = 0;
+        }
+
+        if (user.predictionStats.total > 0) {
+          user.predictionStats.accuracy = Math.round((user.predictionStats.correct / user.predictionStats.total) * 100);
+        }
+        
+        user.markModified('predictionStats');
+        user.markModified('stats');
+        await user.save();
+      }
+    }
+    
+    match.status = 'RESOLVED';
+    await match.save();
   }
 
   async placeBet(userId: string, matchId: string, type: 'HOME_WIN' | 'DRAW' | 'AWAY_WIN' | 'EXACT_SCORE', wager: number) {
@@ -200,6 +261,26 @@ export class PredictionsService {
   }
 
   async getMyBets(userId: string) {
-    return this.userBetModel.find({ userId }).sort({ createdAt: -1 }).exec();
+    const bets = await this.userBetModel.find({ userId }).sort({ createdAt: -1 }).exec();
+    const matchIds = bets.map(b => b.matchId);
+    const matches = await this.predMatchModel.find({ _id: { $in: matchIds } }).exec();
+    
+    return bets.map(bet => {
+      const match = matches.find(m => m._id.toString() === bet.matchId);
+      return {
+        ...bet.toObject(),
+        match: match ? match.toObject() : null
+      };
+    });
+  }
+
+  async getBetById(userId: string, betId: string) {
+    const bet = await this.userBetModel.findOne({ _id: betId, userId }).exec();
+    if (!bet) throw new NotFoundException('Bet not found');
+    const match = await this.predMatchModel.findById(bet.matchId).exec();
+    return {
+      ...bet.toObject(),
+      match: match ? match.toObject() : null
+    };
   }
 }

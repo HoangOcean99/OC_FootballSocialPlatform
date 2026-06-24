@@ -16,7 +16,8 @@ import { JwtModule } from '@nestjs/jwt';
 import { UploadModule } from './upload/upload.module';
 import { WebsocketsModule } from './websockets/websockets.module';
 import { ShopModule } from './shop/shop.module';
-
+import { MessagesModule } from './messages/messages.module';
+import { NotificationsModule } from './notifications/notifications.module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
@@ -60,6 +61,8 @@ import { ShopModule } from './shop/shop.module';
     AdminModule,
     WebsocketsModule,
     ShopModule,
+    MessagesModule,
+    NotificationsModule,
   ],
   controllers: [ApiGatewayController, AuthController],
   providers: [ApiGatewayService],
