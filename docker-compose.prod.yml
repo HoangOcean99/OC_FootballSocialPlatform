@@ -1,0 +1,54 @@
+version: '3.8'
+
+services:
+  api-gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: football_api_gateway
+    restart: unless-stopped
+    ports:
+      - '3001:3001'
+    environment:
+      - PORT=3001
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - MONGODB_URI=${MONGODB_URI} # Điền link MongoDB Atlas vào file .env
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRATION=1d
+      - CLOUDINARY_CLOUD_NAME=${CLOUDINARY_CLOUD_NAME}
+      - CLOUDINARY_API_KEY=${CLOUDINARY_API_KEY}
+      - CLOUDINARY_API_SECRET=${CLOUDINARY_API_SECRET}
+      # Thêm các biến môi trường khác của backend vào đây
+    depends_on:
+      - redis
+    command: ["node", "backend/dist/apps/api-gateway/main.js"]
+
+  auth-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: football_auth_service
+    restart: unless-stopped
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - MONGODB_URI=${MONGODB_URI}
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRATION=1d
+      # Thêm các biến môi trường khác của auth service vào đây
+    depends_on:
+      - redis
+    command: ["node", "backend/dist/apps/auth-service/main.js"]
+
+  redis:
+    image: redis:alpine
+    container_name: football_redis_prod
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis_prod_data:/data
+    restart: unless-stopped
+
+volumes:
+  redis_prod_data:

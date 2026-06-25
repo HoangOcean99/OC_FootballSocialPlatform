@@ -7,8 +7,11 @@ import { fetchConversations, fetchPrivateMessages, sendPrivateMessage, markConve
 import { Send, User as UserIcon, ArrowLeft, Search, Phone, Video, Info, MoreHorizontal, Image as ImageIcon, Loader2, X } from 'lucide-react';
 import { formatTimeAgo } from '@/app/[locale]/(protected)/home/page';
 import { useImageModalStore } from '@/store/useImageModalStore';
+import { useTranslations } from 'next-intl';
 
 export default function MessagesPage() {
+  const t = useTranslations('Messages');
+  const tCom = useTranslations('Communities');
   const { user } = useAuthStore();
   const { socket } = useSocket();
   const [conversations, setConversations] = useState<any[]>([]);
@@ -148,7 +151,7 @@ export default function MessagesPage() {
       {/* Sidebar - Inbox List */}
       <div className={`w-full md:w-80 lg:w-96 flex flex-col border-r border-white/[0.06] ${selectedChat ? 'hidden md:flex' : 'flex'}`}>
         <div className="p-4 border-b border-white/[0.06] flex items-center justify-between">
-          <h1 className="text-2xl font-black text-white">Đoạn chat</h1>
+          <h1 className="text-2xl font-black text-white">{t('title')}</h1>
           <button className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center hover:bg-white/10 transition-colors">
             <MoreHorizontal className="w-5 h-5 text-gray-400" />
           </button>
@@ -162,7 +165,7 @@ export default function MessagesPage() {
             </div>
             <input
               type="text"
-              placeholder="Tìm kiếm trên Messenger"
+              placeholder={t('search_placeholder')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full bg-[#182330] rounded-full py-2 pl-10 pr-4 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 transition-shadow"
@@ -172,10 +175,10 @@ export default function MessagesPage() {
         
         <div className="flex-1 overflow-y-auto scrollbar-thin">
           {loadingConv ? (
-            <div className="p-4 text-center text-gray-500">Đang tải...</div>
+            <div className="p-4 text-center text-gray-500">{t('loading')}</div>
           ) : conversations.length === 0 ? (
             <div className="p-8 text-center text-gray-500">
-              <p>Chưa có cuộc trò chuyện nào.</p>
+              <p>{t('no_conversations')}</p>
             </div>
           ) : (
             conversations.filter(c => 
@@ -204,12 +207,12 @@ export default function MessagesPage() {
                   </p>
                   <div className="flex items-center text-[13px] mt-0.5">
                     <p className={`truncate ${conv.unreadCount > 0 ? 'font-bold text-white' : 'text-gray-400'}`}>
-                      {conv.lastMessage?.senderId === user?.id ? 'Bạn: ' : ''}
-                      {conv.lastMessage?.imageUrl ? 'Đã gửi một ảnh' : (conv.lastMessage?.content || 'Chưa có tin nhắn')}
+                      {conv.lastMessage?.senderId === user?.id ? t('you') + ': ' : ''}
+                      {conv.lastMessage?.imageUrl ? t('sent_a_photo') : (conv.lastMessage?.content || t('no_messages'))}
                     </p>
                     {conv.lastMessage && (
                       <span className="shrink-0 ml-1 text-gray-500">
-                        • {formatTimeAgo(conv.updatedAt)}
+                        • {formatTimeAgo(conv.updatedAt, tCom)}
                       </span>
                     )}
                   </div>
@@ -248,7 +251,7 @@ export default function MessagesPage() {
                 </div>
                 <div className="cursor-pointer">
                   <h2 className="text-[15px] font-bold text-white hover:underline">{selectedChat.otherUser?.displayName || selectedChat.otherUser?.username}</h2>
-                  <p className="text-xs text-gray-400">Đang hoạt động</p>
+                  <p className="text-xs text-gray-400">{t('active')}</p>
                 </div>
               </div>
 
@@ -409,9 +412,9 @@ export default function MessagesPage() {
             <div className="w-20 h-20 rounded-full bg-white/[0.02] border border-white/[0.05] flex items-center justify-center mb-4">
               <UserIcon className="w-10 h-10 text-gray-600" />
             </div>
-            <p className="text-lg font-medium text-gray-400">Chọn một cuộc trò chuyện</p>
+            <p className="text-lg font-medium text-gray-400">{t('select_conversation')}</p>
             <p className="text-sm mt-2 max-w-sm text-center">
-              Nhắn tin trực tiếp với bạn bè hoặc những người dùng khác trên nền tảng để trao đổi và chia sẻ nhanh chóng.
+              {t('select_conversation_desc')}
             </p>
           </div>
         )}

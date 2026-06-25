@@ -8,8 +8,10 @@ import { fetchPrivateMessages, sendPrivateMessage, markConversationAsRead, uploa
 import { X, Minus, Send, Phone, Video, Info, Maximize2, Image as ImageIcon, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useImageModalStore } from '@/store/useImageModalStore';
+import { useTranslations } from 'next-intl';
 
 export default function ChatBox({ user: chatUser }: { user: ChatUser }) {
+  const t = useTranslations('Messages');
   const { user: currentUser } = useAuthStore();
   const { socket } = useSocket();
   const { closeChat, toggleMinimize, minimizedChats } = useChatStore();
@@ -171,7 +173,7 @@ export default function ChatBox({ user: chatUser }: { user: ChatUser }) {
         </div>
         <div className="flex-1 min-w-0 flex flex-col justify-center">
           <h3 className="text-[14px] font-bold text-white truncate hover:underline">{chatUser.displayName || chatUser.username}</h3>
-          <p className="text-[10px] text-gray-400 truncate leading-none">Đang hoạt động</p>
+          <p className="text-[10px] text-gray-400 truncate leading-none">{t('active')}</p>
         </div>
         <div className="flex items-center gap-1 text-emerald-500">
           <button 

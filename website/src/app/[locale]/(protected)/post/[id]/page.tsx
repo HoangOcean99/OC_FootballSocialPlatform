@@ -12,25 +12,26 @@ import PostActions from '@/components/PostActions';
 import { io, Socket } from 'socket.io-client';
 import { useImageModalStore } from '@/store/useImageModalStore';
 
-export function formatTimeAgo(dateStr: string | Date): string {
-  if (!dateStr) return 'Vừa xong';
+export function formatTimeAgo(dateStr: string | Date, t?: any): string {
+  if (!dateStr) return t ? t('time_just_now') : 'Vừa xong';
   const diff = Date.now() - new Date(dateStr).getTime();
   const minutes = Math.floor(diff / 60000);
-  if (minutes < 1) return 'Vừa xong';
-  if (minutes < 60) return `${minutes} phút trước`;
+  if (minutes < 1) return t ? t('time_just_now') : 'Vừa xong';
+  if (minutes < 60) return t ? t('time_mins_ago', { min: minutes }) : `${minutes} phút trước`;
   const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours} giờ trước`;
+  if (hours < 24) return t ? t('time_hours_ago', { hour: hours }) : `${hours} giờ trước`;
   const days = Math.floor(hours / 24);
-  if (days < 30) return `${days} ngày trước`;
+  if (days < 30) return t ? t('time_days_ago', { day: days }) : `${days} ngày trước`;
   const months = Math.floor(days / 30);
-  if (months < 12) return `${months} tháng trước`;
-  return `${Math.floor(months / 12)} năm trước`;
+  if (months < 12) return t ? t('time_months_ago', { month: months }) : `${months} tháng trước`;
+  return t ? t('time_years_ago', { year: Math.floor(months / 12) }) : `${Math.floor(months / 12)} năm trước`;
 }
 
 export default function PostDetailPage() {
   const params = useParams();
   const router = useRouter();
   const t = useTranslations('Home');
+  const tCom = useTranslations('Communities');
   const id = params?.id as string;
   const { user } = useAuthStore();
 
@@ -273,7 +274,7 @@ export default function PostDetailPage() {
               )}
             </div>
             <div className="flex items-center gap-4 mt-1 ml-2 text-[11px] font-semibold text-gray-500">
-              <span>{formatTimeAgo(comment.createdAt)}</span>
+              <span>{formatTimeAgo(comment.createdAt, tCom)}</span>
               {(isJoined || isAdmin) && (
                 <button 
                   onClick={() => setReplyingTo({ postId: id, commentId: comment.id, username: comment.author.displayName })}
@@ -407,7 +408,7 @@ export default function PostDetailPage() {
                       {community.name}
                     </span>
                     <span className="text-gray-700">·</span>
-                    <span className="text-[12px] text-gray-500">{formatTimeAgo(post.createdAt)}</span>
+                    <span className="text-[12px] text-gray-500">{formatTimeAgo(post.createdAt, tCom)}</span>
                   </div>
                 </div>
                 {(isAdmin || isPostAuthor) && (

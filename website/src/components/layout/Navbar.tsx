@@ -168,14 +168,14 @@ export default function Navbar() {
               {isNotificationsOpen && (
                 <div className="absolute top-full mt-2 right-0 w-[320px] bg-[#0f1923] border border-white/10 rounded-2xl shadow-xl z-50 overflow-hidden flex flex-col max-h-[80vh]">
                   <div className="flex items-center justify-between p-4 border-b border-white/5">
-                    <h3 className="text-white font-bold">Thông báo</h3>
+                    <h3 className="text-white font-bold">{t('notifications')}</h3>
                     {unreadCount > 0 && (
                       <button 
                         onClick={() => markAllAsRead()}
                         className="text-xs text-emerald-400 hover:text-emerald-300 transition-colors flex items-center gap-1"
                       >
                         <CheckCheck className="w-3.5 h-3.5" />
-                        Đánh dấu đã đọc
+                        {t('mark_all_read')}
                       </button>
                     )}
                   </div>
@@ -183,7 +183,7 @@ export default function Navbar() {
                   <div className="overflow-y-auto flex-1 p-2 flex flex-col gap-1">
                     {notifications.length === 0 ? (
                       <div className="text-center py-8 text-gray-500 text-sm">
-                        Không có thông báo nào.
+                        {t('no_notifications')}
                       </div>
                     ) : (
                       notifications.map(notif => (
@@ -279,7 +279,7 @@ export default function Navbar() {
                         </Link>
                       )}
                       <Link href="/profile" className="block w-full text-left px-2 py-1.5 text-gray-300 hover:bg-white/10 hover:text-white rounded-lg text-sm transition-colors mb-1">
-                        👤 Hồ sơ
+                        👤 {t('profile')}
                       </Link>
                       <button onClick={handleLogout} className="w-full text-left px-2 py-1.5 text-red-400 hover:bg-red-500/10 rounded-lg text-sm transition-colors">
                         🚪 {t('logout')}

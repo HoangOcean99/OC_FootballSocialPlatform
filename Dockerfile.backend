@@ -1,0 +1,43 @@
+# Stage 1: Build & Prune
+FROM node:20-alpine AS builder
+WORKDIR /app
+
+RUN npm install -g turbo
+COPY . .
+
+# Prune the workspace to keep only 'backend' and its dependencies
+RUN turbo prune backend --docker
+
+# Stage 2: Install and Build
+FROM node:20-alpine AS installer
+WORKDIR /app
+
+# Copy pruned package.json files
+COPY --from=builder /app/out/json/ .
+COPY --from=builder /app/out/package-lock.json ./package-lock.json
+
+# Install dependencies (ignoring scripts to avoid running postinstall if any)
+RUN npm ci
+
+# Copy source code of pruned projects
+COPY --from=builder /app/out/full/ .
+
+# Build the backend and its dependencies
+RUN npx turbo run build --filter=backend...
+
+# Stage 3: Production Runner
+FROM node:20-alpine AS runner
+WORKDIR /app
+
+ENV NODE_ENV=production
+
+# We copy over the minimum required files to run the Node app
+COPY --from=installer /app/package.json ./
+COPY --from=installer /app/node_modules ./node_modules
+COPY --from=installer /app/packages ./packages
+COPY --from=installer /app/backend/package.json ./backend/
+COPY --from=installer /app/backend/node_modules ./backend/node_modules
+COPY --from=installer /app/backend/dist ./backend/dist
+
+# Default command (will be overridden by docker-compose)
+CMD ["node", "backend/dist/apps/api-gateway/main.js"]

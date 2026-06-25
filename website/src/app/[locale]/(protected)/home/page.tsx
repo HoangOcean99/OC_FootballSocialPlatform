@@ -18,19 +18,19 @@ import { toast } from 'react-hot-toast';
 import { Target, CheckCircle2 } from 'lucide-react';
 import BetModal from '@/components/BetModal';
 
-export function formatTimeAgo(dateStr: string | Date): string {
-  if (!dateStr) return 'Vừa xong';
+export function formatTimeAgo(dateStr: string | Date, t?: any): string {
+  if (!dateStr) return t ? t('time_just_now') : 'Vừa xong';
   const diff = Date.now() - new Date(dateStr).getTime();
   const minutes = Math.floor(diff / 60000);
-  if (minutes < 1) return 'Vừa xong';
-  if (minutes < 60) return `${minutes} phút trước`;
+  if (minutes < 1) return t ? t('time_just_now') : 'Vừa xong';
+  if (minutes < 60) return t ? t('time_mins_ago', { min: minutes }) : `${minutes} phút trước`;
   const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours} giờ trước`;
+  if (hours < 24) return t ? t('time_hours_ago', { hour: hours }) : `${hours} giờ trước`;
   const days = Math.floor(hours / 24);
-  if (days < 30) return `${days} ngày trước`;
+  if (days < 30) return t ? t('time_days_ago', { day: days }) : `${days} ngày trước`;
   const months = Math.floor(days / 30);
-  if (months < 12) return `${months} tháng trước`;
-  return `${Math.floor(months / 12)} năm trước`;
+  if (months < 12) return t ? t('time_months_ago', { month: months }) : `${months} tháng trước`;
+  return t ? t('time_years_ago', { year: Math.floor(months / 12) }) : `${Math.floor(months / 12)} năm trước`;
 }
 
 function formatKickoff(isoString: string): string {
