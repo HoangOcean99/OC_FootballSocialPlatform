@@ -10,6 +10,8 @@ async function bootstrap() {
       options: {
         host: process.env.REDIS_HOST || 'localhost',
         port: parseInt(process.env.REDIS_PORT || '6379', 10),
+        password: process.env.REDIS_PASSWORD,
+        tls: process.env.REDIS_PASSWORD ? { servername: process.env.REDIS_HOST } : undefined,
       },
     },
   );
