@@ -4,9 +4,9 @@ import { ApiGatewayModule } from './api-gateway.module';
 async function bootstrap() {
   const app = await NestFactory.create(ApiGatewayModule);
 
-  // Enable CORS for the website (localhost:3000, 3001, 3002)
+  // Enable CORS for all domains during testing/production
   app.enableCors({
-    origin: ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002'],
+    origin: true,
     credentials: true,
   });
 
