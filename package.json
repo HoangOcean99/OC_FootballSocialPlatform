@@ -10,6 +10,7 @@
     "format": "prettier --write \"**/*.{ts,tsx,md}\""
   },
   "devDependencies": {
+    "@babel/plugin-transform-template-literals": "^7.29.7",
     "prettier": "^3.2.5",
     "turbo": "^2.0.0"
   },
@@ -18,5 +19,8 @@
     "mobile",
     "backend",
     "packages/*"
-  ]
+  ],
+  "dependencies": {
+    "babel-preset-expo": "~54.0.11"
+  }
 }
